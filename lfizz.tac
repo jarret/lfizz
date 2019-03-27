@@ -5,11 +5,13 @@
 import sys
 import os
 
+from twisted.application import service
+
 path = os.path.dirname(os.path.realpath(__file__))
 print(path)
 sys.path.insert(0, path)
 from lfizz.lfizz import LFizz
 
-
-lf = LFizz()
-lf.run()
+application = service.Application("Soda Machine Daemon")
+service = LFizz()
+service.setServiceParent(application)
