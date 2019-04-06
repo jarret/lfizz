@@ -1,0 +1,17 @@
+[Unit]
+Description=Soda Machine Process
+
+[Service]
+ExecStart=/usr/local/bin/twistd \
+    --nodaemon \
+    --python=/home/pi/lfizz/lfizz.tac
+
+WorkingDirectory=/home/pi/lfizz-work
+
+User=pi
+Group=pi
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
