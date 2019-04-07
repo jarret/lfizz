@@ -5,42 +5,44 @@
 
 from twisted.application.service import Service
 from twisted.internet import reactor
-from twisted.internet.task import LoopingCall
 
-import RPi.GPIO as GPIO
-
-LED = 11
-
+#from led_blink import LedBlink
+from app_state import AppState
+from cad_price import CadPrice
 
 class LFizz(Service):
     def __init__(self):
         super().__init__()
-        self.on = False
-        GPIO.setmode(GPIO.BOARD)
-        GPIO.setup(LED, GPIO.OUT)
-        self.led_loop = LoopingCall(self.flip_led)
-        self.led_loop.start(0.5, now=False)
-        print("sadf")
+#        self.led_blink = LedBlink()
+        self.app_state = AppState()
+        self.cad_price = CadPrice(reactor, self.app_state)
 
-    def flip_led(self):
-        print("sdafdsasadf")
-        if self.on:
-            self.on = False
-            GPIO.output(LED, GPIO.LOW)
-            print("led off")
-        else:
-            self.on = True
-            GPIO.output(LED, GPIO.HIGH)
-            print("led on")
+    ###########################################################################
+
+    def run_lfizz(self):
+#        self.led_blink.run()
+        self.cad_price.run()
+        reactor.run()
+
+    def stop_lfizz(self):
+#        self.led_blink.stop()
+        self.cad_price.stop()
+        reactor.stop()
+
+    ###########################################################################
 
     def startService(self):
         super().startService()
-        reactor.run()
+        self.run_lfizz()
 
     def stopService(self):
         super().stopService()
+        self.stop_lfizz()
         reactor.stop()
 
-#if __name__ == '__main__':
-#    lf = LFizz()
-#    reactor.run()
+
+###############################################################################
+
+if __name__ == '__main__':
+    lf = LFizz()
+    lf.run_lfizz()
