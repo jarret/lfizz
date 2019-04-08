@@ -13,5 +13,5 @@ sys.path.insert(0, path)
 from lfizz.lfizz import LFizz
 
 application = service.Application("Soda Machine Daemon")
-service = LFizz()
+service = LFizz("/etc/lfizz.conf")
 service.setServiceParent(application)

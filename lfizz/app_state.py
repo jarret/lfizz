@@ -7,13 +7,24 @@ STATES = {"INIT", "BOOTSTRAP", "DISPLAY_HEALTH", "INVOICING",
 
 
 class AppState(object):
-    def __init__(self):
-        self.facts = {'CADBTC':         6500.00,
-                      'ip':             "0.0.0.0",
+    def __init__(self, config):
+        self.facts = {
+                      'fiat_currency':  config['Vending']['FiatCurrency'],
+                      'fiat_price':     config['Vending']['FiatPrice'],
+                      'strike_api_key': config['Strike']['ApiKey'],
+                      'exchange_rate':  None,
+                      'ip':             None,
                       'current_bolt11': None,
+                      'current_id':     None,
+                      'current_expiry': None,
                       'last_bolt11':    None,
+                      'last_id':        None,
+                      'last_expiry':    None,
                      }
+        self.state = None
         self.set_state("INIT")
+
+    ###########################################################################
 
     def set_state(self, new_state):
         assert new_state in STATES
@@ -21,11 +32,13 @@ class AppState(object):
 
     ###########################################################################
 
-    def update_price(self, new_price):
-        self.facts['CADBTC'] = new_price
-        print("updated price: $%0.2f" % self.facts['CADBTC'])
+    def update_exchange_rate(self, new_price):
+        self.facts['exchange_rate'] = new_price
+        print("updated price: $%0.2f" % self.facts['exchange_rate'])
+        print("facts: %s" % self.facts)
 
-    def price_fetch_error(self):
+    def exchange_rate_fetch_error(self):
+        self.facts['exchange_rate'] = None
         self.set_state("BOOTSTRAP")
 
     ###########################################################################
@@ -33,6 +46,7 @@ class AppState(object):
     def update_network_ip(self, new_ip):
         self.facts['ip'] = new_ip
         print("updated ip: %s" % self.facts['ip'])
+        print("facts: %s" % self.facts)
 
     def network_ip_fetch_error(self):
         self.set_state("BOOTSTRAP")

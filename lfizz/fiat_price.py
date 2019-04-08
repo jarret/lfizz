@@ -19,20 +19,21 @@ HEADERS = {'User-Agent':      'a-bitcoin-driven-soda-machine',
 POLL_SLEEP = 10 # every 10 seconds
 
 
-class CadPrice(object):
+class FiatPrice(object):
     """ Periodically fetches the CADBTC exchange rate from BitPay for the
         applicaton to use. """
     def __init__(self, reactor, app_state):
         self.reactor = reactor
         self.app_state = app_state
+        self.fiat_currency = app_state.facts['fiat_currency']
 
-    def _pull_price_thread_func():
+    def _pull_price_thread_func(fiat_currency):
         try:
             response = requests.request('GET', url=BITPAY_RATE_URL,
                                         headers=HEADERS)
             prices = json.loads(response.text)
             for p in prices:
-                if p['code'] == 'CAD':
+                if p['code'] == fiat_currency:
                     return p['rate']
             return None
         except:
@@ -40,13 +41,14 @@ class CadPrice(object):
 
     def _pull_price_callback(self, result):
         if result:
-            self.app_state.update_price(result)
+            self.app_state.update_exchange_rate(result)
         else:
-            self.app_state.update_price_fetch_error()
+            self.app_state.exchange_rate_fetch_error()
         self.reactor.callLater(POLL_SLEEP, self._pull_price_defer)
 
     def _pull_price_defer(self):
-        d = threads.deferToThread(CadPrice._pull_price_thread_func)
+        d = threads.deferToThread(FiatPrice._pull_price_thread_func,
+                                  self.fiat_currency)
         d.addCallback(self._pull_price_callback)
 
     #######################################################################
