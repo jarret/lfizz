@@ -12,6 +12,7 @@ class AppState(object):
                       'fiat_currency':  config['Vending']['FiatCurrency'],
                       'fiat_price':     config['Vending']['FiatPrice'],
                       'strike_api_key': config['Strike']['ApiKey'],
+                      'email':          config['Contact']['Email'],
                       'exchange_rate':  None,
                       'ip':             None,
                       'current_bolt11': None,
@@ -49,6 +50,7 @@ class AppState(object):
         print("facts: %s" % self.facts)
 
     def network_ip_fetch_error(self):
+        self.facts['ip'] = None
         self.set_state("BOOTSTRAP")
 
 

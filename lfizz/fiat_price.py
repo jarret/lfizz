@@ -11,7 +11,6 @@ from twisted.internet import threads
 
 BITPAY_RATE_URL = "https://bitpay.com/api/rates/BTC"
 HEADERS = {'User-Agent':      'a-bitcoin-driven-soda-machine',
-           'From':            'jarret.dyrbye@gmail.com',
            'Accept-Encoding': 'gzip',
           }
 
@@ -26,11 +25,13 @@ class FiatPrice(object):
         self.reactor = reactor
         self.app_state = app_state
         self.fiat_currency = app_state.facts['fiat_currency']
+        self.headers = HEADERS.copy()
+        self.headers['From'] = self.app_state.facts['email']
 
-    def _pull_price_thread_func(fiat_currency):
+    def _pull_price_thread_func(fiat_currency, headers):
         try:
             response = requests.request('GET', url=BITPAY_RATE_URL,
-                                        headers=HEADERS)
+                                        headers=headers)
             prices = json.loads(response.text)
             for p in prices:
                 if p['code'] == fiat_currency:
@@ -48,7 +49,7 @@ class FiatPrice(object):
 
     def _pull_price_defer(self):
         d = threads.deferToThread(FiatPrice._pull_price_thread_func,
-                                  self.fiat_currency)
+                                  self.fiat_currency, self.headers)
         d.addCallback(self._pull_price_callback)
 
     #######################################################################

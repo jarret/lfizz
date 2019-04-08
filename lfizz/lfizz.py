@@ -18,16 +18,22 @@ class LFizz(Service):
     def __init__(self, config_file):
         super().__init__()
 #        self.led_blink = LedBlink()
-        if not os.path.exists(config_file):
-            sys.exit("please add a config file at %s" % config_file)
-        self.config = configparser.ConfigParser()
-        self.config.read(config_file)
-        if self.config['Strike']['ApiKey'] == 'sk_your_api_key':
-            sys.exit("please set your Strike API key in %s" % config_file)
-        print(self.config)
+
+        self.config = self._parse_config(config_file)
         self.app_state = AppState(self.config)
         self.fiat_price = FiatPrice(reactor, self.app_state)
         self.network_ip = NetworkIp(reactor, self.app_state)
+
+    ###########################################################################
+
+    def _parse_config(self, config_file):
+        if not os.path.exists(config_file):
+            sys.exit("please add a config file at %s" % config_file)
+        config = configparser.ConfigParser()
+        config.read(config_file)
+        if config['Strike']['ApiKey'] == 'sk_your_api_key':
+            sys.exit("please set your Strike API key in %s" % config_file)
+        return config
 
     ###########################################################################
 
