@@ -2,7 +2,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-
+import time
 import requests
 import json
 
@@ -24,9 +24,9 @@ class FiatPrice(object):
     def __init__(self, reactor, app_state):
         self.reactor = reactor
         self.app_state = app_state
-        self.fiat_currency = app_state.facts['fiat_currency']
+        self.fiat_currency = app_state.static_facts['fiat_currency']
         self.headers = HEADERS.copy()
-        self.headers['From'] = self.app_state.facts['email']
+        self.headers['From'] = self.app_state.static_facts['email']
 
     def _pull_price_thread_func(fiat_currency, headers):
         try:
@@ -42,7 +42,7 @@ class FiatPrice(object):
 
     def _pull_price_callback(self, result):
         if result:
-            self.app_state.update_exchange_rate(result)
+            self.app_state.update_exchange_rate(result, time.time())
         else:
             self.app_state.exchange_rate_fetch_error()
         self.reactor.callLater(POLL_SLEEP, self._pull_price_defer)

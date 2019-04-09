@@ -13,6 +13,7 @@ from twisted.internet import reactor
 from app_state import AppState
 from fiat_price import FiatPrice
 from network_ip import NetworkIp
+from strike_invoicer import StrikeInvoicer
 
 class LFizz(Service):
     def __init__(self, config_file):
@@ -23,6 +24,7 @@ class LFizz(Service):
         self.app_state = AppState(self.config)
         self.fiat_price = FiatPrice(reactor, self.app_state)
         self.network_ip = NetworkIp(reactor, self.app_state)
+        self.strike_invoicer = StrikeInvoicer(reactor, self.app_state)
 
     ###########################################################################
 
@@ -41,12 +43,14 @@ class LFizz(Service):
 #        self.led_blink.run()
         self.fiat_price.run()
         self.network_ip.run()
+        self.strike_invoicer.run()
         reactor.run()
 
     def stop_lfizz(self):
 #        self.led_blink.stop()
         self.fiat_price.stop()
         self.network_ip.stop()
+        self.strike_invoicer.stop()
         reactor.stop()
 
     ###########################################################################

@@ -5,22 +5,24 @@
 STATES = {"INIT", "BOOTSTRAP", "DISPLAY_HEALTH", "INVOICING",
           "PAYMENT_RECEIVED"}
 
-
 class AppState(object):
     def __init__(self, config):
-        self.facts = {
-                      'fiat_currency':  config['Vending']['FiatCurrency'],
-                      'fiat_price':     config['Vending']['FiatPrice'],
-                      'strike_api_key': config['Strike']['ApiKey'],
-                      'email':          config['Contact']['Email'],
-                      'exchange_rate':  None,
-                      'ip':             None,
-                      'current_bolt11': None,
-                      'current_id':     None,
-                      'current_expiry': None,
-                      'last_bolt11':    None,
-                      'last_id':        None,
-                      'last_expiry':    None,
+        self.static_facts = {
+            'fiat_currency':  config['Vending']['FiatCurrency'],
+            'fiat_price':     float(config['Vending']['FiatPrice']),
+            'strike_api_key': config['Strike']['ApiKey'],
+            'email':          config['Contact']['Email'],
+            'timezone':       config['Time']['Timezone'],
+            }
+        self.facts = {'exchange_rate':           None,
+                      'exchange_rate_timestamp': None,
+                      'ip':                      None,
+                      'current_bolt11':          None,
+                      'current_id':              None,
+                      'current_expiry':          None,
+                      'last_bolt11':             None,
+                      'last_id':                 None,
+                      'last_expiry':             None,
                      }
         self.state = None
         self.set_state("INIT")
@@ -33,13 +35,15 @@ class AppState(object):
 
     ###########################################################################
 
-    def update_exchange_rate(self, new_price):
+    def update_exchange_rate(self, new_price, timestamp):
         self.facts['exchange_rate'] = new_price
+        self.facts['exchange_rate_timestamp'] = timestamp
         print("updated price: $%0.2f" % self.facts['exchange_rate'])
         print("facts: %s" % self.facts)
 
     def exchange_rate_fetch_error(self):
         self.facts['exchange_rate'] = None
+        self.facts['exchange_rate_timestamp'] = None
         self.set_state("BOOTSTRAP")
 
     ###########################################################################
