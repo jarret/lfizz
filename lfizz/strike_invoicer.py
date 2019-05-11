@@ -3,9 +3,30 @@
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 import datetime
+import requests
+import json
 import pytz
 
 from twisted.internet import threads
+
+
+STRIKE_URL = 'https://api.strike.acinq.co/api/v1/charges'
+
+class Strike(object):
+    def create_charge(api_key, satoshis, description):
+        #try:
+        data = {'amount':      satoshis,
+                'description': description,
+                'currency':    'btc'}
+        headers = {'Content-Type': 'application/json'}
+        auth = (api_key, '')
+        response = requests.request('POST', url=STRIKE_URL,
+                                    data=json.dumps(data), headers=headers, auth=auth)
+        return json.loads(response.text)
+        #except:
+        #    return None
+
+
 
 SATOSHIS_PER_BTC = 100000000
 
@@ -18,45 +39,59 @@ class StrikeInvoicer(object):
         self.price = self.app_state.static_facts['fiat_price']
         self.currency = self.app_state.static_facts['fiat_currency']
         self.timezone = self.app_state.static_facts['timezone']
+        self.invoice = None
 
-    def calc_satoshis(self):
-        rate = self.app_state.facts['exchange_rate']
-        price = self.price
-        return round((price / rate) * SATOSHIS_PER_BTC)
+    def calc_satoshis(exchange_rate, price):
+        self.email = self.app_state.static_facts['email']
+        return round((price / exchange_rate) * SATOSHIS_PER_BTC)
 
-    def fmt_timestamp(self, timestamp):
+    def fmt_timestamp(timestamp, timezone):
         dt = datetime.datetime.fromtimestamp(timestamp,
-                                             tz=pytz.timezone(self.timezone))
+                                             tz=pytz.timezone(timezone))
         return dt.strftime('%b %d, %H:%M:%S')
 
-    def gen_description(self):
-        rate = self.app_state.facts['exchange_rate']
-        t = self.fmt_timestamp(self.app_state.facts['exchange_rate_timestamp'])
+    def gen_description(details):
+        rate = details['exchange_rate']
+        t = StrikeInvoicer.fmt_timestamp(details['exchange_rate_timestamp'],
+                                         details['timezone'])
         return ("One soda. $%0.2f %s calculated at rate $%0.2f BTC%s "
-                "fetched at %s") % (self.price, self.currency, rate,
-                                    self.currency, t)
+                "fetched at %s") % (details['price'], details['currency'],
+                                    rate, details['currency'], t)
 
-    def new_invoice(self):
-        if not self.app_state.facts['exchange_rate']:
+    def new_invoice(details):
+        if not details['exchange_rate']:
             print("no price info")
             return
-        sat = self.calc_satoshis()
-        description = self.gen_description()
-        print("satoshis: %d - description: %s" % (sat, description))
+        sats = StrikeInvoicer.calc_satoshis(details['exchange_rate'],
+                                            details['price'])
+        description = StrikeInvoicer.gen_description(details)
+        print("satoshis: %d - description: %s" % (sats, description))
+        return Strike.create_charge(details['api_key'], sats, description)
 
-    def _new_invoice_thread_func():
+    def _new_invoice_thread_func(details):
         print("thread func")
-        return "asdf"
+        i = StrikeInvoicer.new_invoice(details)
+        return i
 
     def _new_invoice_callback(self, result):
         print("callback: %s" % result)
-        self.new_invoice()
+        self.invoice = result
+        self.app_state.static_facts['current_bolt11'] = self.invoice
         self.reactor.callLater(5, self._new_invoice_defer)
         pass
 
     def _new_invoice_defer(self):
-        d = threads.deferToThread(StrikeInvoicer._new_invoice_thread_func)
-        d.addCallback(self._new_invoice_callback)
+        details = {'price':         self.price,
+                   'currency':      self.currency,
+                   'timezone':      self.timezone,
+                   'api_key':       self.api_key,
+                   'exchange_rate': self.app_state.facts['exchange_rate'],
+                   'exchange_rate_timestamp': self.app_state.facts['exchange_rate_timestamp'],
+                  }
+        if not self.invoice:
+            d = threads.deferToThread(StrikeInvoicer._new_invoice_thread_func,
+                                      details)
+            d.addCallback(self._new_invoice_callback)
 
     def run(self):
         self.reactor.callLater(1.0, self._new_invoice_defer)
