@@ -5,7 +5,9 @@
 
 import os
 import sys
+import argparse
 import configparser
+
 from twisted.application.service import Service
 from twisted.internet import reactor
 
@@ -14,11 +16,11 @@ from app_state import AppState
 from fiat_price import FiatPrice
 from network_ip import NetworkIp
 from strike_invoicer import StrikeInvoicer, StrikeWatcher
-from electrical import Electrical
+from mock_electrical import MockElectrical
 from actor import Actor
 
 class LFizz(Service):
-    def __init__(self, config_file):
+    def __init__(self, config_file, mock_gpio=False):
         super().__init__()
 #        self.led_blink = LedBlink()
 
@@ -27,7 +29,12 @@ class LFizz(Service):
         self.fiat_price = FiatPrice(reactor, self.app_state)
         self.network_ip = NetworkIp(reactor, self.app_state)
         self.strike_invoicer = StrikeInvoicer(reactor, self.app_state)
-        self.electrical = Electrical(reactor)
+        if not mock_gpio:
+            from electrical import Electrical
+            self.electrical = Electrical(reactor)
+        else:
+            self.electrical = MockElectrical(reactor)
+
         self.actor = Actor(reactor, self.electrical, self.strike_invoicer)
         self.strike_watcher = StrikeWatcher(reactor, self.actor, self.app_state)
         self.electrical.set_actor(self.actor)
@@ -75,6 +82,15 @@ class LFizz(Service):
 
 ###############################################################################
 
+
+DESCRIPTION = "LFizz - capitalist drink dispenser"
+
 if __name__ == '__main__':
-    lf = LFizz("/etc/lfizz.conf")
+    parser = argparse.ArgumentParser(description=DESCRIPTION)
+
+    parser.add_argument('-m', '--mock-gpio', action='store_true',
+                        help="run without gpio for dev/test on a non-pi system")
+    settings = parser.parse_args()
+
+    lf = LFizz("/etc/lfizz.conf", settings.mock_gpio)
     lf.run_lfizz()
