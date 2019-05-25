@@ -19,10 +19,12 @@ class AppState(object):
                       'ip':                      None,
                       'current_bolt11':          None,
                       'current_id':              None,
+                      'current_satoshis':        1,
                       'current_expiry':          None,
                       'last_bolt11':             None,
                       'last_id':                 None,
                       'last_expiry':             None,
+                      'last_satoshis':           1,
                      }
         self.state = None
         self.set_state("INIT")
@@ -35,8 +37,8 @@ class AppState(object):
 
     ###########################################################################
 
-    def update_exchange_rate(self, new_price, timestamp):
-        self.facts['exchange_rate'] = new_price
+    def update_exchange_rate(self, new_rate, timestamp):
+        self.facts['exchange_rate'] = new_rate
         self.facts['exchange_rate_timestamp'] = timestamp
         print("updated price: $%0.2f" % self.facts['exchange_rate'])
         print("facts: %s" % self.facts)

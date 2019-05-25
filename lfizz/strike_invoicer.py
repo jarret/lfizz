@@ -6,6 +6,7 @@ import datetime
 import requests
 import json
 import pytz
+from bolt11 import Bolt11
 
 from twisted.internet import threads
 
@@ -71,18 +72,20 @@ class StrikeInvoicer(object):
     def new_invoice(details):
         if not details['exchange_rate']:
             print("no price info")
-            return
+            return None, None
         sats = StrikeInvoicer.calc_satoshis(details['exchange_rate'],
                                             details['price'])
         description = StrikeInvoicer.gen_description(details)
         print("satoshis: %d - description: %s" % (sats, description))
-        return Strike.create_charge(details['api_key'], sats, description)
+        charge = Strike.create_charge(details['api_key'], sats, description)
+        print(json.dumps(charge, indent=1, sort_keys=True))
+        return charge, sats
 
     def _new_invoice_thread_func(details):
         print("thread func")
-        i = StrikeInvoicer.new_invoice(details)
-        if i:
-            return i['id'], i['payment_request']
+        charge, sats = StrikeInvoicer.new_invoice(details)
+        if charge:
+            return charge['id'], charge['payment_request'], sats
         else:
             return None
 
@@ -92,11 +95,15 @@ class StrikeInvoicer(object):
             print("trouble getting invoice!")
             self.reactor.callLater(3, self._new_invoice_defer)
             return
-        i, bolt11 = result
+        i, bolt11, sats = result
         print("callback i: %s bolt11: %s" % (i, bolt11))
+        b11 = Bolt11.to_dict(bolt11)
+        print("decoded: %s" % json.dumps(b11, indent=1, sort_keys=True))
+        expiry = b11['created_at'] + b11['expiry']
         self.app_state.facts['current_bolt11'] = bolt11
         self.app_state.facts['current_id'] = i
-        pass
+        self.app_state.facts['current_satoshis'] = sats
+        self.app_state.facts['current_expiry'] = expiry
 
     def _new_invoice_defer(self):
         details = {'price':         self.price,
@@ -143,6 +150,7 @@ class StrikeWatcher(object):
         cp = c['paid'] if c else False
         lp = l['paid'] if l else False
         print("current_paid: %s last_paid: %s" % (cp, lp))
+        print(json.dumps(c, indent=1, sort_keys=True))
         return {'current_paid': cp,
                 'last_paid':    lp}
 

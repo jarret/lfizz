@@ -27,6 +27,10 @@ class FiatPrice(object):
         self.fiat_currency = app_state.static_facts['fiat_currency']
         self.headers = HEADERS.copy()
         self.headers['From'] = self.app_state.static_facts['email']
+        self.actor = None
+
+    def set_actor(self, actor):
+        self.actor = actor
 
     def _pull_price_thread_func(fiat_currency, headers):
         try:
@@ -43,6 +47,8 @@ class FiatPrice(object):
     def _pull_price_callback(self, result):
         if result:
             self.app_state.update_exchange_rate(result, time.time())
+            self.actor.check_exchange_rate()
+            self.actor.check_expiry()
         else:
             self.app_state.exchange_rate_fetch_error()
         self.reactor.callLater(POLL_SLEEP, self._pull_price_defer)

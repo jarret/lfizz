@@ -3,11 +3,16 @@
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 import time
+from strike_invoicer import StrikeInvoicer
 
+QUANTITY_CHANGE_THRESHOLD = 0.01
+
+SECONDS_APPROACHING_EXPIRY = 60 * 5 # 5 minutes
 
 class Actor(object):
-    def __init__(self, reactor, electrical, strike_invoicer):
+    def __init__(self, reactor, app_state, electrical, strike_invoicer):
         self.reactor = reactor
+        self.app_state = app_state
         self.electrical = electrical
         self.strike_invoicer = strike_invoicer
 
@@ -15,4 +20,45 @@ class Actor(object):
         self.electrical.trigger_coin_mech()
 
     def get_new_invoice(self):
+        self.strike_invoicer.kick_invoice_request()
+
+    def check_expiry(self):
+        now = time.time()
+        expiry = self.app_state.facts['current_expiry']
+        expiry = expiry if expiry else (now + 3600)
+        print("check expiry: %d now: %d" % (expiry, now))
+
+        if (now + SECONDS_APPROACHING_EXPIRY) > expiry:
+            self.new_invoice()
+            return
+        print("not expired")
+
+
+    def check_exchange_rate(self):
+        new_rate = self.app_state.facts['exchange_rate']
+        old_sats = self.app_state.facts['current_satoshis']
+        fiat_price = self.app_state.static_facts['fiat_price']
+        print("exchange change")
+        print("new rate: %0.8f" % (new_rate))
+        print("old_sats: %d" % (old_sats if old_sats else 0))
+        print("fiat price: %0.4f" % fiat_price)
+        new_sats = StrikeInvoicer.calc_satoshis(new_rate, fiat_price)
+        print("new sats: %d" % (new_sats))
+        change = float(new_sats) / float(old_sats)
+        quantity_change = abs(1.0 - change)
+        print("quantity change: %0.6f" % quantity_change)
+
+        if quantity_change > QUANTITY_CHANGE_THRESHOLD:
+            self.new_invoice()
+            return
+        print("keep this invoice")
+
+    def new_invoice(self):
+        print("getting new invoice")
+        # TODO left off here - haven't run code!
+        a = self.app_state
+        a.facts['last_bolt11'] = a.facts['current_bolt11']
+        a.facts['last_id'] = a.facts['current_id']
+        a.facts['last_expiry'] = a.facts['current_expiry']
+        a.facts['last_satoshis'] = a.facts['current_satoshis']
         self.strike_invoicer.kick_invoice_request()

@@ -35,9 +35,12 @@ class LFizz(Service):
         else:
             self.electrical = MockElectrical(reactor)
 
-        self.actor = Actor(reactor, self.electrical, self.strike_invoicer)
+        self.actor = Actor(reactor, self.app_state, self.electrical,
+                           self.strike_invoicer)
         self.strike_watcher = StrikeWatcher(reactor, self.actor, self.app_state)
+
         self.electrical.set_actor(self.actor)
+        self.fiat_price.set_actor(self.actor)
 
     ###########################################################################
 
