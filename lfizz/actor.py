@@ -9,12 +9,17 @@ QUANTITY_CHANGE_THRESHOLD = 0.01
 
 SECONDS_APPROACHING_EXPIRY = 60 * 5 # 5 minutes
 
+BOOT_SCREEN_DURATION = 8
+
 class Actor(object):
-    def __init__(self, reactor, app_state, electrical, strike_invoicer):
+    def __init__(self, reactor, app_state, electrical, eink, strike_invoicer):
         self.reactor = reactor
         self.app_state = app_state
         self.electrical = electrical
+        self.eink = eink
         self.strike_invoicer = strike_invoicer
+        self.boot_screen_ends = time.time() + BOOT_SCREEN_DURATION
+        self.has_invoice = False
 
     def trigger_coin_mech(self):
         self.electrical.trigger_coin_mech()
@@ -62,3 +67,25 @@ class Actor(object):
         a.facts['last_expiry'] = a.facts['current_expiry']
         a.facts['last_satoshis'] = a.facts['current_satoshis']
         self.strike_invoicer.kick_invoice_request()
+
+    def prompt_drink_selection(self):
+        self.eink.output_select_drink()
+
+    def announce_new_invoice(self, bolt11):
+        bolt11 = self.app_state.facts['current_bolt11']
+        self.eink.output_qr(bolt11)
+        self.has_invoice = True
+
+    def output_first_boot(self):
+        self.eink.output_first_boot()
+
+    def poke_stats(self):
+        if time.time() > self.boot_screen_ends:
+            return
+        if self.has_invoice:
+            return
+        f = self.app_state.facts
+        ip = f['ip']
+        exchange_rate = f['exchange_rate']
+        invoice = f['current_bolt11']
+        self.eink.output_boot_up(ip, exchange_rate, invoice)

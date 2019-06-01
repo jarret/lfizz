@@ -49,6 +49,7 @@ class FiatPrice(object):
             self.app_state.update_exchange_rate(result, time.time())
             self.actor.check_exchange_rate()
             self.actor.check_expiry()
+            self.actor.poke_stats()
         else:
             self.app_state.exchange_rate_fetch_error()
         self.reactor.callLater(POLL_SLEEP, self._pull_price_defer)

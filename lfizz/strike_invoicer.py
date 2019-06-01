@@ -51,7 +51,10 @@ class StrikeInvoicer(object):
         self.price = self.app_state.static_facts['fiat_price']
         self.currency = self.app_state.static_facts['fiat_currency']
         self.timezone = self.app_state.static_facts['timezone']
-        self.invoice = None
+        self.actor = None
+
+    def set_actor(self, actor):
+        self.actor = actor
 
     def calc_satoshis(exchange_rate, price):
         return round((price / exchange_rate) * SATOSHIS_PER_BTC)
@@ -104,6 +107,8 @@ class StrikeInvoicer(object):
         self.app_state.facts['current_id'] = i
         self.app_state.facts['current_satoshis'] = sats
         self.app_state.facts['current_expiry'] = expiry
+
+        self.actor.announce_new_invoice(bolt11)
 
     def _new_invoice_defer(self):
         details = {'price':         self.price,
@@ -162,6 +167,7 @@ class StrikeWatcher(object):
             self.app_state.facts['current_id'] = None
             self.app_state.facts['current_bolt11'] = None
             self.actor.get_new_invoice()
+            self.actor.prompt_drink_selection()
         self.reactor.callLater(STRIKE_POLL_TIME, self._check_strike_defer)
 
     def _check_strike_defer(self):

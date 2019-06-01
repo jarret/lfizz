@@ -16,6 +16,10 @@ class NetworkIp(object):
     def __init__(self, reactor, app_state):
         self.reactor = reactor
         self.app_state = app_state
+        self.actor = None
+
+    def set_actor(self, actor):
+        self.actor = actor
 
     def _get_ips():
         # TODO - this might not work as intended in all network
@@ -39,6 +43,7 @@ class NetworkIp(object):
         else:
             self.app_state.update_network_ip_error()
         self.reactor.callLater(POLL_SLEEP, self._get_ip_defer)
+        self.actor.poke_stats()
 
     def _get_ip_defer(self):
         d = threads.deferToThread(NetworkIp._get_ip_thread_func)

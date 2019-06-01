@@ -6,14 +6,11 @@ from binascii import hexlify, unhexlify
 from third_party.lnaddr import lndecode
 
 
-TEST = "lnbc4640n1pwwnx46pp5gtpe4cc2dzc02rshzryj7n5r94tclke5jlnncn25rkh87s3wx4lqdy9fahx2grndajxzt3qysczuvp4ypp5z3pqvdskccm4d3shgetyypshggrjv96x2gpyxycrwwpn9c6njgzz23p5xs2yypnx2arrdpjkggrpwssy6cteyqer2tpqxyen5dpj8g6rwcqp262xa2naye5j2ufahhs9vzqscht5lgu2agtfcapjt8yese0hf4kqz7mmz2lj5l40khhneu9dn7lclc88c45y6jhzrxdhwftymejpz4qsq37klpm"
-
-
 MSATOSHIS_PER_BTC = 100000000000
 
 class Bolt11(object):
     """ Parse a bolt 11 to a dictionary.
-        WARNING: this is kind of primitive and doesn't properly parse all the valid tags in
+        WARNING: this is kind of primitive and doesn't properly parse all the           valid tags in
         https://github.com/lightningnetwork/lightning-rfc/blob/master/11-payment-encoding.md
     """
 
@@ -78,6 +75,7 @@ class Bolt11(object):
         return {key: value for key, value in Bolt11.iter_attributes(bolt11)}
 
 
+#TEST = "lnbc4640n1pwwnx46pp5gtpe4cc2dzc02rshzryj7n5r94tclke5jlnncn25rkh87s3wx4lqdy9fahx2grndajxzt3qysczuvp4ypp5z3pqvdskccm4d3shgetyypshggrjv96x2gpyxycrwwpn9c6njgzz23p5xs2yypnx2arrdpjkggrpwssy6cteyqer2tpqxyen5dpj8g6rwcqp262xa2naye5j2ufahhs9vzqscht5lgu2agtfcapjt8yese0hf4kqz7mmz2lj5l40khhneu9dn7lclc88c45y6jhzrxdhwftymejpz4qsq37klpm"
 #Bolt11.dump(TEST)
 #d = Bolt11.to_dict(TEST)
 #print(json.dumps(d, indent=1, sort_keys=True))
