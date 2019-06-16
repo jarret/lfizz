@@ -72,8 +72,19 @@ class Actor(object):
         self.eink.output_select_drink()
 
     def announce_new_invoice(self, bolt11):
-        bolt11 = self.app_state.facts['current_bolt11']
-        self.eink.output_qr(bolt11)
+        f = self.app_state.facts
+        bolt11 = f['current_bolt11']
+        satoshis = f['current_satoshis']
+        exchange_rate = f['exchange_rate']
+        exchange_rate_timestamp = f['exchange_rate_timestamp']
+        sf = self.app_state.static_facts
+        fiat_currency = sf['fiat_currency']
+        fiat_price = sf['fiat_price']
+        timezone = sf['timezone']
+
+        self.eink.output_qr(bolt11, satoshis, exchange_rate,
+                            exchange_rate_timestamp, fiat_currency,
+                            fiat_price, timezone)
         self.has_invoice = True
 
     def output_first_boot(self):

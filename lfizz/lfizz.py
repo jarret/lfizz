@@ -31,10 +31,10 @@ class LFizz(Service):
             from electrical import Electrical
             from eink import Eink
             self.electrical = Electrical(reactor)
-            self.eink = Eink()
+            self.eink = Eink(reactor)
         else:
             self.electrical = MockElectrical(reactor)
-            self.eink = MockEink()
+            self.eink = MockEink(reactor)
 
         self.strike_invoicer = StrikeInvoicer(reactor, self.app_state)
         self.actor = Actor(reactor, self.app_state, self.electrical, self.eink,
