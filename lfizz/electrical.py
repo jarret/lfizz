@@ -15,7 +15,7 @@ class Electrical(object):
     def __init__(self, reactor):
         self.actor = None
 
-        GPIO.setmode(GPIO.BOARD)
+        #GPIO.setmode(GPIO.BOARD)
         GPIO.setup(COIN_MECH_RELAY, GPIO.OUT)
 
         GPIO.setup(INSERT_CHANGE_LIGHT, GPIO.IN, pull_up_down=GPIO.PUD_UP)

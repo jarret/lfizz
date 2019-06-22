@@ -48,7 +48,7 @@
 #
 
 
-from official import epdconfig
+from third_party.waveshare import epdconfig
 from PIL import Image
 import RPi.GPIO as GPIO
 

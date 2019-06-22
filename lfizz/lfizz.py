@@ -28,6 +28,8 @@ class LFizz(Service):
         self.config = self._parse_config(config_file)
         self.app_state = AppState(self.config)
         if not mock_gpio:
+            import RPi.GPIO as GPIO
+            GPIO.setmode(GPIO.BOARD)
             from electrical import Electrical
             from eink import Eink
             self.electrical = Electrical(reactor)

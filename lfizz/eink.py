@@ -6,6 +6,8 @@
 from third_party.waveshare.epd4in2 import EPD, EPD_WIDTH, EPD_HEIGHT
 import time
 import os
+import datetime
+import pytz
 
 from twisted.internet import threads
 
@@ -26,6 +28,7 @@ class Eink(object):
     def __init__(self, reactor):
         self.reactor = reactor
         self.drawing = False
+        self.booted = False
 
     def clear():
         Eink.INTERFACE.Clear(WHITE)
@@ -44,7 +47,7 @@ class Eink(object):
         print("display call: %0.4f" % (time.time() - start))
 
 
-    def finished_drawing(self, result):
+    def finish_drawing(self, result):
         self.drawing = False
 
     ###########################################################################
@@ -61,11 +64,13 @@ class Eink(object):
 
     def output_first_boot(self):
         if self.drawing:
-            print("still drawing")
+            print("output_first_boot still drawing")
             self.reactor.callLater(1.0, self.output_first_boot)
             return
+        if self.booted:
+            return
         self.drawing = True
-        d = threads.deferToThread(self.draw_first_boot)
+        d = threads.deferToThread(Eink.draw_first_boot)
         d.addCallback(self.finish_drawing)
 
     ###########################################################################
@@ -79,15 +84,21 @@ class Eink(object):
         full_image.paste(text_image, (180, 0))
         Eink._display_image(full_image)
 
+    def finish_booting(self, result):
+        self.booted = True
+
     def output_boot_up(self, ip, exchange_rate, invoice):
         if self.drawing:
-            print("still drawing")
+            print("output_boot_up still drawing")
             self.reactor.callLater(1.0, self.output_boot_up, ip, exchange_rate,
-                                   invoice))
+                                   invoice)
+            return
+        if self.booted:
             return
         self.drawing = True
-        d = threads.deferToThread(self.draw_boot_up)
+        d = threads.deferToThread(Eink.draw_boot_up, ip, exchange_rate, invoice)
         d.addCallback(self.finish_drawing)
+        d.addCallback(self.finish_booting)
 
     ###########################################################################
 
@@ -107,6 +118,10 @@ class Eink(object):
     def _draw_text_to_image(draw, line1, line2, line3):
         font = ImageFont.truetype(FONT, 16)
         font_big = ImageFont.truetype(FONT, 20)
+        print("1: %s 2: %s 3: %s" % (line1, line2, line3))
+        line1 = str(line1) if line1 else "(none)"
+        line2 = str(line2) if line2 else "(none)"
+        line3 = str(line3) if line3 else "(none)"
         draw.text((1, 5), line1, font=font, fill=BLACK)
         draw.text((1, 40), line2, font=font_big, fill=BLACK)
         draw.text((1, 80), line3, font=font, fill=BLACK)
@@ -139,13 +154,14 @@ class Eink(object):
                   exchange_rate_timestamp, fiat_currency, fiat_price,
                   timezone):
         if self.drawing:
-            print("still drawing")
+            print("output_qr still drawing")
             self.reactor.callLater(1.0, self.output_qr, bolt11, satoshis,
                                    exchange_rate, exchange_rate_timestamp,
                                    fiat_currency, fiat_price, timezone)
             return
+        self.booted = True
         self.drawing = True
-        d = threads.deferToThread(self.draw_qr, bolt11, bolt11, satoshis,
+        d = threads.deferToThread(Eink.draw_qr, bolt11, satoshis,
                                   exchange_rate, exchange_rate_timestamp,
                                   fiat_currency, fiat_price, timezone)
         d.addCallback(self.finish_drawing)
@@ -163,11 +179,11 @@ class Eink(object):
 
     def output_select_drink(self):
         if self.drawing:
-            print("still drawing")
+            print("output_select_drink still drawing")
             self.reactor.callLater(1.0, self.output_select_drink)
             return
         self.drawing = True
-        d = threads.deferToThread(self.draw_select_drink)
+        d = threads.deferToThread(Eink.draw_select_drink)
         d.addCallback(self.finish_drawing)
 
     ###########################################################################
@@ -183,7 +199,7 @@ class Eink(object):
 
     def output_error(self):
         if self.drawing:
-            print("still drawing")
+            print("output_error still drawing")
             self.reactor.callLater(1.0, self.output_error)
             return
         self.drawing = True
