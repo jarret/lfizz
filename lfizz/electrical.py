@@ -6,6 +6,7 @@ import time
 
 from twisted.internet import reactor
 import RPi.GPIO as GPIO
+from print import print_green
 
 COIN_MECH_RELAY = 7
 INSERT_CHANGE_LIGHT = 8
@@ -20,7 +21,7 @@ class Electrical(object):
 
         GPIO.setup(INSERT_CHANGE_LIGHT, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.add_event_detect(INSERT_CHANGE_LIGHT, GPIO.BOTH,
-                              callback=self._both_cb, bouncetime=300)
+                              callback=self._both_cb, bouncetime=1000)
 
     def set_actor(self, actor):
         self.actor = actor
@@ -40,8 +41,8 @@ class Electrical(object):
             reactor.callFromThread(self.rising, button_no)
 
     def falling(self, button_no):
-        print("electrical falling %s" % button_no)
+        print_green("electrical falling %s" % button_no)
 
     def rising(self, button_no):
-        print("electrical rising %s" % button_no)
-
+        print_green("electrical rising %s" % button_no)
+        self.actor.get_new_invoice()

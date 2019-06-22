@@ -4,6 +4,7 @@
 
 import time
 from strike_invoicer import StrikeInvoicer
+from print import print_green
 
 QUANTITY_CHANGE_THRESHOLD = 0.01
 
@@ -59,7 +60,7 @@ class Actor(object):
         print("keep this invoice")
 
     def new_invoice(self):
-        print("getting new invoice")
+        print_green("getting new invoice")
         # TODO left off here - haven't run code!
         a = self.app_state
         a.facts['last_bolt11'] = a.facts['current_bolt11']
