@@ -27,6 +27,7 @@ class Electrical(object):
         self.actor = actor
 
     def trigger_coin_mech(self):
+        print_green("triggering coin mech")
         GPIO.output(COIN_MECH_RELAY, GPIO.LOW)
         #print("sleeping")
         time.sleep(2)
