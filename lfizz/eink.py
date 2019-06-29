@@ -13,6 +13,8 @@ from twisted.internet import threads
 
 from PIL import Image,ImageDraw,ImageFont
 from qrdraw import QRDraw
+from print import print_fancy_blue
+
 
 WHITE = 0xff
 BLACK = 0x00
@@ -27,8 +29,8 @@ class Eink(object):
 
     def __init__(self, reactor):
         self.reactor = reactor
+        self.draw_queue = []
         self.drawing = False
-        self.booted = False
 
     def clear():
         Eink.INTERFACE.Clear(WHITE)
@@ -46,8 +48,29 @@ class Eink(object):
         Eink.INTERFACE.display(b)
         print("eink display call: %0.4f" % (time.time() - start))
 
+    ###########################################################################
+
+    def queue_draw(self, func, *params):
+        self.draw_queue.append({'func': func, 'params': params})
+
+    def draw_from_queue(self):
+        print_fancy_blue("draw attempt")
+
+        if self.drawing:
+            return
+        if len(self.draw_queue) == 0:
+            return
+
+        print_fancy_blue("queue len: %s" % len(self.draw_queue))
+
+        draw = self.draw_queue.pop(0)
+        d = threads.deferToThread(draw['func'], *draw['params'])
+        d.addCallback(self.finish_drawing)
+
     def finish_drawing(self, result):
+        print_fancy_blue("finish queue op")
         self.drawing = False
+        self.draw_from_queue()
 
     ###########################################################################
 
@@ -62,15 +85,8 @@ class Eink(object):
         Eink._display_image(full_image)
 
     def output_first_boot(self):
-        if self.drawing:
-            #print("output_first_boot still drawing")
-            self.reactor.callLater(1.0, self.output_first_boot)
-            return
-        if self.booted:
-            return
-        self.drawing = True
-        d = threads.deferToThread(Eink.draw_first_boot)
-        d.addCallback(self.finish_drawing)
+        self.queue_draw(Eink.draw_first_boot)
+        self.draw_from_queue()
 
     ###########################################################################
 
@@ -83,21 +99,9 @@ class Eink(object):
         full_image.paste(text_image, (180, 0))
         Eink._display_image(full_image)
 
-    def finish_booting(self, result):
-        self.booted = True
-
     def output_boot_up(self, ip, exchange_rate, invoice):
-        if self.drawing:
-            #print("output_boot_up still drawing")
-            self.reactor.callLater(1.0, self.output_boot_up, ip, exchange_rate,
-                                   invoice)
-            return
-        if self.booted:
-            return
-        self.drawing = True
-        d = threads.deferToThread(Eink.draw_boot_up, ip, exchange_rate, invoice)
-        d.addCallback(self.finish_drawing)
-        d.addCallback(self.finish_booting)
+        self.queue_draw(Eink.draw_boot_up, ip, exchange_rate, invoice)
+        self.draw_from_queue()
 
     ###########################################################################
 
@@ -152,18 +156,10 @@ class Eink(object):
     def output_qr(self, bolt11, satoshis, exchange_rate,
                   exchange_rate_timestamp, fiat_currency, fiat_price,
                   timezone):
-        if self.drawing:
-            print("output_qr still drawing")
-            self.reactor.callLater(1.0, self.output_qr, bolt11, satoshis,
-                                   exchange_rate, exchange_rate_timestamp,
-                                   fiat_currency, fiat_price, timezone)
-            return
-        self.booted = True
-        self.drawing = True
-        d = threads.deferToThread(Eink.draw_qr, bolt11, satoshis,
-                                  exchange_rate, exchange_rate_timestamp,
-                                  fiat_currency, fiat_price, timezone)
-        d.addCallback(self.finish_drawing)
+        self.queue_draw(Eink.draw_qr, bolt11, satoshis, exchange_rate,
+                        exchange_rate_timestamp, fiat_currency, fiat_price,
+                        timezone)
+        self.draw_from_queue()
 
     ###########################################################################
 
@@ -177,13 +173,8 @@ class Eink(object):
         Eink._display_image(full_image)
 
     def output_select_drink(self):
-        if self.drawing:
-            print("output_select_drink still drawing")
-            self.reactor.callLater(1.0, self.output_select_drink)
-            return
-        self.drawing = True
-        d = threads.deferToThread(Eink.draw_select_drink)
-        d.addCallback(self.finish_drawing)
+        self.queue_draw(Eink.draw_select_drink)
+        self.draw_from_queue()
 
     ###########################################################################
 
@@ -197,13 +188,8 @@ class Eink(object):
         Eink._display_image(full_image)
 
     def output_error(self):
-        if self.drawing:
-            print("output_error still drawing")
-            self.reactor.callLater(1.0, self.output_error)
-            return
-        self.drawing = True
-        d = threads.deferToThread(self.draw_error)
-        d.addCallback(self.finish_drawing)
+        self.queue_draw(Eink.draw_error)
+        self.draw_from_queue()
 
 
 Eink.INTERFACE = EPD()
