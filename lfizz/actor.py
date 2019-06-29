@@ -4,9 +4,9 @@
 
 import time
 from strike_invoicer import StrikeInvoicer
-from print import print_green
+from print import print_green, print_chill_light_blue
 
-QUANTITY_CHANGE_THRESHOLD = 0.01
+QUANTITY_CHANGE_THRESHOLD = 0.0001
 
 SECONDS_APPROACHING_EXPIRY = 60 * 5 # 5 minutes
 
@@ -32,32 +32,33 @@ class Actor(object):
         now = time.time()
         expiry = self.app_state.facts['current_expiry']
         expiry = expiry if expiry else (now + 3600)
-        print("check expiry: %d now: %d" % (expiry, now))
+        #print("check expiry: %d now: %d" % (expiry, now))
 
         if (now + SECONDS_APPROACHING_EXPIRY) > expiry:
             self.new_invoice()
             return
-        print("not expired")
+        #print("not expired")
 
 
     def check_exchange_rate(self):
         new_rate = self.app_state.facts['exchange_rate']
         old_sats = self.app_state.facts['current_satoshis']
         fiat_price = self.app_state.static_facts['fiat_price']
-        print("exchange change")
-        print("new rate: %0.8f" % (new_rate))
-        print("old_sats: %d" % (old_sats if old_sats else 0))
-        print("fiat price: %0.4f" % fiat_price)
+        #print("exchange change")
+        #print("new rate: %0.8f" % (new_rate))
+        #print("old_sats: %d" % (old_sats if old_sats else 0))
+        #print("fiat price: %0.4f" % fiat_price)
         new_sats = StrikeInvoicer.calc_satoshis(new_rate, fiat_price)
-        print("new sats: %d" % (new_sats))
+        #print("new sats: %d" % (new_sats))
         change = float(new_sats) / float(old_sats)
         quantity_change = abs(1.0 - change)
-        print("quantity change: %0.6f" % quantity_change)
+        print_chill_light_blue("quantity change: %0.6f" % quantity_change)
 
         if quantity_change > QUANTITY_CHANGE_THRESHOLD:
+            print("new invoice")
             self.new_invoice()
             return
-        print("keep this invoice")
+        #print("keep this invoice")
 
     def new_invoice(self):
         print_green("getting new invoice")

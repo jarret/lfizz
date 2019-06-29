@@ -6,7 +6,7 @@ import time
 
 from twisted.internet import reactor
 import RPi.GPIO as GPIO
-from print import print_green
+from print import print_green, print_light_blue
 
 COIN_MECH_RELAY = 7
 INSERT_CHANGE_LIGHT = 8
@@ -28,7 +28,7 @@ class Electrical(object):
 
     def trigger_coin_mech(self):
         GPIO.output(COIN_MECH_RELAY, GPIO.LOW)
-        print("sleeping")
+        #print("sleeping")
         time.sleep(2)
         GPIO.output(COIN_MECH_RELAY, GPIO.HIGH)
 

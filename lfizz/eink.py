@@ -35,17 +35,16 @@ class Eink(object):
 
     def _display_image(image):
         start = time.time()
-        print("rotate")
+        #print("rotate")
         rotated = image.rotate(180)
-        print("rotated: %0.4f seconds" % (time.time() - start))
+        print("eink image rotated: %0.4f seconds" % (time.time() - start))
 
         start = time.time()
         b = Eink.INTERFACE.getbuffer(rotated)
-        print("get buffer: %0.4f" % (time.time() - start))
+        print("eink get buffer: %0.4f" % (time.time() - start))
         start = time.time()
         Eink.INTERFACE.display(b)
-        print("display call: %0.4f" % (time.time() - start))
-
+        print("eink display call: %0.4f" % (time.time() - start))
 
     def finish_drawing(self, result):
         self.drawing = False
@@ -64,7 +63,7 @@ class Eink(object):
 
     def output_first_boot(self):
         if self.drawing:
-            print("output_first_boot still drawing")
+            #print("output_first_boot still drawing")
             self.reactor.callLater(1.0, self.output_first_boot)
             return
         if self.booted:
@@ -89,7 +88,7 @@ class Eink(object):
 
     def output_boot_up(self, ip, exchange_rate, invoice):
         if self.drawing:
-            print("output_boot_up still drawing")
+            #print("output_boot_up still drawing")
             self.reactor.callLater(1.0, self.output_boot_up, ip, exchange_rate,
                                    invoice)
             return
@@ -118,7 +117,7 @@ class Eink(object):
     def _draw_text_to_image(draw, line1, line2, line3):
         font = ImageFont.truetype(FONT, 16)
         font_big = ImageFont.truetype(FONT, 20)
-        print("1: %s 2: %s 3: %s" % (line1, line2, line3))
+        #print("1: %s 2: %s 3: %s" % (line1, line2, line3))
         line1 = str(line1) if line1 else "(none)"
         line2 = str(line2) if line2 else "(none)"
         line3 = str(line3) if line3 else "(none)"

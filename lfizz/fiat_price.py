@@ -15,7 +15,7 @@ HEADERS = {'User-Agent':      'a-bitcoin-driven-soda-machine',
           }
 
 #POLL_SLEEP = 60 * 10 # every 10 minutes
-POLL_SLEEP = 10 # every 10 seconds
+POLL_SLEEP = 10 # every 60 seconds
 
 
 class FiatPrice(object):
