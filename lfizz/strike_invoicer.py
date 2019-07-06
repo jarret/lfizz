@@ -99,7 +99,7 @@ class StrikeInvoicer(object):
         if not result:
             # try again?
             # print("trouble getting invoice!")
-            self.reactor.callLater(3, self._new_invoice_defer)
+            self.reactor.callLater(3, self.new_invoice_defer)
             return
         i, bolt11, sats = result
         # print("callback i: %s bolt11: %s" % (i, bolt11))
