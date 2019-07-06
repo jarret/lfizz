@@ -25,9 +25,6 @@ class Actor(object):
     def trigger_coin_mech(self):
         self.electrical.trigger_coin_mech()
 
-    def get_new_invoice(self):
-        self.strike_invoicer.kick_invoice_request()
-
     def check_expiry(self):
         now = time.time()
         expiry = self.app_state.facts['current_expiry']
@@ -68,7 +65,7 @@ class Actor(object):
         a.facts['last_id'] = a.facts['current_id']
         a.facts['last_expiry'] = a.facts['current_expiry']
         a.facts['last_satoshis'] = a.facts['current_satoshis']
-        self.strike_invoicer.kick_invoice_request()
+        self.strike_invoicer.new_invoice_defer()
 
     def prompt_drink_selection(self):
         self.eink.output_select_drink()
