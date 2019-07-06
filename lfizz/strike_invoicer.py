@@ -113,7 +113,7 @@ class StrikeInvoicer(object):
 
         self.actor.announce_new_invoice(bolt11)
 
-    def _new_invoice_defer(self):
+    def new_invoice_defer(self):
         details = {'price':         self.price,
                    'currency':      self.currency,
                    'timezone':      self.timezone,
@@ -126,14 +126,8 @@ class StrikeInvoicer(object):
                                   details)
         d.addCallback(self._new_invoice_callback)
 
-    def kick_invoice_request(self):
-        if not self.app_state.facts['current_id']:
-            # we have an invoice, don't need another
-            return
-        self._new_invoice_defer()
-
     def run(self):
-        self.reactor.callLater(1.0, self._new_invoice_defer)
+        self.reactor.callLater(1.0, self.new_invoice_defer)
         pass
 
     def stop(self):
