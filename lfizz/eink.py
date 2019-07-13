@@ -29,7 +29,7 @@ class Eink(object):
 
     def __init__(self, reactor):
         self.reactor = reactor
-        self.draw_queue = []
+        self.draw_next = None
         self.drawing = False
 
     def clear():
@@ -51,21 +51,29 @@ class Eink(object):
     ###########################################################################
 
     def queue_draw(self, func, *params):
-        self.draw_queue.append({'func': func, 'params': params})
+        # stomp anything waiting with this.
+        self.draw_next = {'func': func, 'params': params}
 
     def draw_from_queue(self):
         print_fancy_blue("draw attempt")
 
         if self.drawing:
             return
-        if len(self.draw_queue) == 0:
+        if not self.draw_next:
             return
 
-        print_fancy_blue("queue len: %s" % len(self.draw_queue))
-
-        draw = self.draw_queue.pop(0)
-        d = threads.deferToThread(draw['func'], *draw['params'])
+        draw = self.draw_next
+        d = threads.deferToThread(self.draw_and_delay, draw['func'],
+                                  *draw['params'])
         d.addCallback(self.finish_drawing)
+        self.draw_next = None
+
+    def draw_and_delay(self, func, args):
+        print_fancy_blue("calling draw function")
+        func(*args)
+        print_fancy_blue("delaying before leaving thread")
+        time.sleep(2)
+        print_fancy_blue("leaving thread")
 
     def finish_drawing(self, result):
         print_fancy_blue("finish queue op")
