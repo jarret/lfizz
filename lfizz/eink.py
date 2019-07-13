@@ -3,7 +3,7 @@
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 
-from third_party.waveshare.epd4in2 import EPD, EPD_WIDTH, EPD_HEIGHT
+from third_party.waveshare.epd4in2 import EPD_WIDTH, EPD_HEIGHT
 import time
 import os
 import datetime
@@ -36,6 +36,9 @@ class Eink(object):
         Eink.INTERFACE.Clear(WHITE)
 
     def _display_image(image):
+
+        Eink.INTERFACE.wait_until_idle()
+
         start = time.time()
         #print("rotate")
         rotated = image.rotate(180)
@@ -64,16 +67,14 @@ class Eink(object):
 
         draw = self.draw_next
         d = threads.deferToThread(self.draw_and_delay, draw['func'],
-                                  *draw['params'])
+                                  draw['params'])
         d.addCallback(self.finish_drawing)
         self.draw_next = None
 
     def draw_and_delay(self, func, args):
-        print_fancy_blue("calling draw function")
+        print_fancy_blue("enter draw thread")
         func(*args)
-        print_fancy_blue("delaying before leaving thread")
-        time.sleep(2)
-        print_fancy_blue("leaving thread")
+        print_fancy_blue("leaving draw thread")
 
     def finish_drawing(self, result):
         print_fancy_blue("finish queue op")
@@ -198,7 +199,3 @@ class Eink(object):
     def output_error(self):
         self.queue_draw(Eink.draw_error)
         self.draw_from_queue()
-
-
-Eink.INTERFACE = EPD()
-Eink.INTERFACE.init()

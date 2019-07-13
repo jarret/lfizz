@@ -5,6 +5,7 @@
 
 import os
 import sys
+import time
 import argparse
 import configparser
 
@@ -32,6 +33,15 @@ class LFizz(Service):
             GPIO.setmode(GPIO.BOARD)
             from electrical import Electrical
             from eink import Eink
+            from third_party.waveshare.epd4in2 import EPD
+
+            print("initializing screen...")
+            Eink.INTERFACE = EPD()
+            Eink.INTERFACE.init()
+            print("done initializing screen")
+            Eink.clear()
+            print("clearing finished")
+
             self.electrical = Electrical(reactor)
             self.eink = Eink(reactor)
         else:
