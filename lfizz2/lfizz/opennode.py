@@ -5,6 +5,7 @@
 import datetime
 import requests
 import json
+import time
 import pytz
 
 from twisted.internet import threads
@@ -14,7 +15,9 @@ from print import print_chill_purple, print_mega_white
 
 ###############################################################################
 
-OPEN_NODE_CHARGE_URL = 'https://api.opennode.co/v1/charges'
+OPEN_NODE_CHARGE_URL = 'https://api.opennode.co/v1/charges/'
+
+OPEN_NODE_POLL_URL = 'https://api.opennode.co/v1/charge/'
 
 OPEN_NODE_RATE_URL = "https://api.opennode.co/v1/rates"
 
@@ -22,9 +25,8 @@ class OpenNode(object):
     def create_charge(api_key, satoshis, description):
         try:
             data = {'amount':      satoshis,
-                    'description': description,
-                   }
-            headers = {'Content-Type': 'application/json',
+                    'description': description}
+            headers = {'Content-Type':  'application/json',
                        'Authorization': api_key}
             response = requests.request('POST', url=OPEN_NODE_CHARGE_URL,
                                         data=json.dumps(data), headers=headers,
@@ -36,8 +38,8 @@ class OpenNode(object):
     def poll_charge(api_key, charge_id):
         try:
             headers = {"Authorization": api_key}
-            response = requests.request('GET', url=OPEN_NODE_CHARGE_URL,
-                                        headers=headers)
+            url = OPEN_NODE_POLL_URL + charge_id
+            response = requests.request('GET', url=url, headers=headers)
             return json.loads(response.text)
         except:
             return None
@@ -92,6 +94,7 @@ class Invoicer(object):
 
     def _new_invoice_thread_func(details):
         # print("thread func")
+        #print("thread: details: %s" % details)
         return Invoicer.new_invoice(details)
 
     def _new_invoice_callback(self, result):
@@ -100,17 +103,38 @@ class Invoicer(object):
             # print("trouble getting invoice!")
             self.reactor.callLater(3, self.new_invoice_defer)
             return
-        i = result
-        bolt11 = i['iightning_invoice']['payreq']
-        expiry = i['lightning_invoice']['created_at']
-        sats = i['lightning_invoice']['amount']
+
+        #print("invoice:")
+        #print(json.dumps(result))
+
+        i = result['data']
+
+        bolt11 = i['lightning_invoice']['payreq']
+        expiry = i['lightning_invoice']['expires_at']
+        sats = i['amount']
+        ident = i['id']
+
+        if self.app_state.facts['current_bolt11'] == None:
+            self.app_state.facts['last_bolt11'] = (
+                self.app_state.facts['current_bolt11'])
+            self.app_state.facts['last_id'] = (
+                self.app_state.facts['current_id'])
+            self.app_state.facts['last_satoshis'] = (
+                self.app_state.facts['current_satoshis'])
+            self.app_state.facts['last_expiry'] = (
+                self.app_state.facts['current_expiry'])
 
         self.app_state.facts['current_bolt11'] = bolt11
-        self.app_state.facts['current_id'] = i
+        self.app_state.facts['current_id'] = ident
         self.app_state.facts['current_satoshis'] = sats
         self.app_state.facts['current_expiry'] = expiry
+        print("bolt11: %s" % bolt11)
 
     def new_invoice_defer(self):
+        if not self.app_state.facts['exchange_rate']:
+            print("don't have the price yet!")
+            return
+
         details = {'price':         self.price,
                    'currency':      self.currency,
                    'timezone':      self.timezone,
@@ -119,9 +143,55 @@ class Invoicer(object):
                    'exchange_rate_timestamp':
                         self.app_state.facts['exchange_rate_timestamp'],
                   }
-        print(details)
         d = threads.deferToThread(Invoicer._new_invoice_thread_func, details)
         d.addCallback(self._new_invoice_callback)
+
+    ############################################################################
+
+    def _current_check_paid_callback(self, result):
+        if not result:
+            print_red("could not check invoice paid?")
+            return
+        print("paid: %s" % result)
+        self.reactor.callLater(1.0, self.current_check_paid_defer)
+
+    def _last_check_paid_callback(self, result):
+        if not result:
+            print_red("could not check last paid?")
+            return
+        print("paid: %s" % result)
+        self.reactor.callLater(1.0, self.last_check_paid_defer)
+
+    def _check_paid_thread_func(details):
+        try:
+            #print("details %s" % details)
+            data = OpenNode.poll_charge(details['api_key'],
+                                        details['charge_id'])
+        except Exception as e:
+            print("could not check paid! %s" % e)
+            return None
+        #print(json.dumps(data))
+        return data['data']['status']
+
+    def current_check_paid_defer(self):
+        if not self.app_state.facts['current_id']:
+            print("no current invoice")
+            return
+        current_details = {'api_key':   self.api_key,
+                           'charge_id': self.app_state.facts['current_id']}
+        d = threads.deferToThread(Invoicer._check_paid_thread_func,
+                                  current_details)
+        d.addCallback(self._current_check_paid_callback)
+
+    def last_check_paid_defer(self):
+        if not self.app_state.facts['last_id']:
+            print("no last invoice")
+            return
+        last_details = {'api_key':   self.api_key,
+                        'charge_id': self.app_state.facts['last_id']}
+        d = threads.deferToThread(Invoicer._check_paid_thread_func,
+                                  last_details)
+        d.addCallback(self._last_check_paid_callback)
 
     ############################################################################
 
@@ -129,17 +199,28 @@ class Invoicer(object):
         if not result:
             print_red("could not get exchange rate?")
             return
-        self.app_state.facts['exchange_rate']
+        print("rate: %s" % result)
+        self.app_state.facts['exchange_rate'] = result
+        self.app_state.facts['exchange_rate_timestamp'] = time.time()
+        self.reactor.callLater(10.0, self.get_exchange_defer)
 
-    def get_exchange_defer(self)
-        d = threads.deferToThread(Invoicer._get_exchange_thread_func, details)
+    def _get_exchange_thread_func():
+        try:
+            data = OpenNode.poll_exchange()
+        except Exception as e:
+            print("could not get exchange rate! %s" % e)
+            return None
+        return data['data']['BTCCAD']['CAD']
+
+
+    def get_exchange_defer(self):
+        d = threads.deferToThread(Invoicer._get_exchange_thread_func)
         d.addCallback(self._get_exchange_callback)
 
     ############################################################################
 
     def run(self):
-        self.reactor.callLater(1.0, self.new_invoice_defer)
-
-if __name__ == "__main__":
-    v = OpenNode.poll_exchange()['data']['BTCCAD']['CAD']
-    print(v)
+        self.reactor.callLater(1.0, self.get_exchange_defer)
+        self.reactor.callLater(3.0, self.new_invoice_defer)
+        self.reactor.callLater(4.0, self.current_check_paid_defer)
+        self.reactor.callLater(4.0, self.last_check_paid_defer)
