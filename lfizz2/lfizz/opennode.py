@@ -12,6 +12,7 @@ from twisted.internet import threads
 
 from print import print_red, print_yellow
 from print import print_chill_purple, print_mega_white
+from print import print_chill_light_blue
 
 ###############################################################################
 
@@ -51,6 +52,7 @@ class OpenNode(object):
 
 ###############################################################################
 
+QUANTITY_CHANGE_THRESHOLD = 0.0001
 
 SATOSHIS_PER_BTC = 100000000
 
@@ -63,6 +65,31 @@ class Invoicer(object):
         self.price = self.app_state.static_facts['fiat_price']
         self.currency = self.app_state.static_facts['fiat_currency']
         self.timezone = self.app_state.static_facts['timezone']
+
+    ###########################################################################
+
+    def deprecate_current_invoice(self):
+        self.app_state.facts['last_bolt11'] = (
+            self.app_state.facts['current_bolt11'])
+        self.app_state.facts['last_id'] = (self.app_state.facts['current_id'])
+        self.app_state.facts['last_satoshis'] = (
+            self.app_state.facts['current_satoshis'])
+        self.app_state.facts['last_expiry'] = (
+            self.app_state.facts['current_expiry'])
+
+    def retire_last_invoice(self):
+        self.app_state.facts['last_bolt11'] = None
+        self.app_state.facts['last_id'] = None
+        self.app_state.facts['last_satoshis'] = None
+        self.app_state.facts['last_expiry'] = None
+
+    def set_current_invoice(self, bolt11, invoice_id, sats, expiry):
+        self.app_state.facts['current_bolt11'] = bolt11
+        self.app_state.facts['current_id'] = invoice_id
+        self.app_state.facts['current_satoshis'] = sats
+        self.app_state.facts['current_expiry'] = expiry
+
+    ###########################################################################
 
     def calc_satoshis(exchange_rate, price):
         return round((price / exchange_rate) * SATOSHIS_PER_BTC)
@@ -108,27 +135,12 @@ class Invoicer(object):
         #print(json.dumps(result))
 
         i = result['data']
-
-        bolt11 = i['lightning_invoice']['payreq']
-        expiry = i['lightning_invoice']['expires_at']
-        sats = i['amount']
-        ident = i['id']
-
-        if self.app_state.facts['current_bolt11'] == None:
-            self.app_state.facts['last_bolt11'] = (
-                self.app_state.facts['current_bolt11'])
-            self.app_state.facts['last_id'] = (
-                self.app_state.facts['current_id'])
-            self.app_state.facts['last_satoshis'] = (
-                self.app_state.facts['current_satoshis'])
-            self.app_state.facts['last_expiry'] = (
-                self.app_state.facts['current_expiry'])
-
-        self.app_state.facts['current_bolt11'] = bolt11
-        self.app_state.facts['current_id'] = ident
-        self.app_state.facts['current_satoshis'] = sats
-        self.app_state.facts['current_expiry'] = expiry
-        print("bolt11: %s" % bolt11)
+        if self.app_state.facts['current_bolt11'] != None:
+            self.deprecate_current_invoice()
+        self.set_current_invoice(i['lightning_invoice']['payreq'],
+                                 i['id'], i['amount'],
+                                 i['lightning_invoice']['expires_at'])
+        self.produce_bolt11(i['lightning_invoice']['payreq'])
 
     def new_invoice_defer(self):
         if not self.app_state.facts['exchange_rate']:
@@ -148,19 +160,46 @@ class Invoicer(object):
 
     ############################################################################
 
+    def produce_bolt11(self, bolt11):
+        print_chill_purple(bolt11)
+
+    def produce_paid_event(self):
+        print_chill_purple("VEND DRINK!")
+
+    ############################################################################
+
     def _current_check_paid_callback(self, result):
         if not result:
             print_red("could not check invoice paid?")
             return
-        print("paid: %s" % result)
-        self.reactor.callLater(1.0, self.current_check_paid_defer)
+        print("current invoice: %s" % result)
+
+        if result == "paid":
+            self.produce_paid_event()
+            self.deprecate_current_invoice()
+            self.reactor.callLater(0.1, self.new_invoice_defer)
+            self.reactor.callLater(5.0, self.current_check_paid_defer)
+        elif result == "expired":
+            self.deprecate_current_invoice()
+            self.reactor.callLater(0.1, self.new_invoice_defer)
+            self.reactor.callLater(5.0, self.current_check_paid_defer)
+        else:
+            self.reactor.callLater(1.0, self.current_check_paid_defer)
 
     def _last_check_paid_callback(self, result):
         if not result:
             print_red("could not check last paid?")
             return
-        print("paid: %s" % result)
-        self.reactor.callLater(1.0, self.last_check_paid_defer)
+        print("last invoice: %s %s" % result)
+
+        if result == "paid":
+            self.produce_paid_event()
+            self.retire_last_invoice()
+        elif result == "expired":
+            self.retire_last_invoice()
+        else:
+            self.reactor.callLater(1.0, self.last_check_paid_defer)
+
 
     def _check_paid_thread_func(details):
         try:
@@ -194,6 +233,22 @@ class Invoicer(object):
         d.addCallback(self._last_check_paid_callback)
 
     ############################################################################
+
+    def _check_invoice_exhange_rate(self):
+        if not self.app_state.facts['current_id']:
+            return
+        self.app_state.facts['exchange_rate']
+        new_sats = Invoicer.calc_satoshis(
+            self.app_state.facts['exchange_rate'],
+            self.app_state.static_facts['fiat_price'])
+        old_sats = self.app_state.facts['current_satoshis'] = sats
+
+        change = float(new_sats) / float(old_sats)
+        quantity_change = abs(1.0 - change)
+        print_chill_light_blue("quantity change: %0.6f" % quantity_change)
+        if quantity_change > QUANTITY_CHANGE_THRESHOLD:
+            self.deprecate_current_invoice()
+            self.reactor.callLater(0.1, self.new_invoice_defer)
 
     def _get_exchange_callback(self, result):
         if not result:
