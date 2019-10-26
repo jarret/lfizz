@@ -12,22 +12,33 @@ import configparser
 from twisted.application.service import Service
 from twisted.internet import reactor
 
+
+import RPi.GPIO as GPIO
+
+from third_party.waveshare.epd4in2 import EPD
+
 #from led_blink import LedBlink
 from app_state import AppState
 #from fiat_price import FiatPrice
 #from network_ip import NetworkIp
 from opennode import Invoicer
+from eink import Eink
+
+
 
 from log_setup import setup_logging
 
 class LFizz(Service):
+    EINK = None
+
     def __init__(self, config_file):
         super().__init__()
 
         self.config = self._parse_config(config_file)
         self._setup_logging(self.config)
         self.app_state = AppState(self.config)
-        self.invoicer = Invoicer(reactor, self.app_state)
+        self.invoicer = Invoicer(reactor, self.app_state, LFizz.EINK)
+
        #self.strike_watcher = StrikeWatcher(reactor, self.actor, self.app_state)
         #self.fiat_price = FiatPrice(reactor, self.app_state)
         #self.network_ip = NetworkIp(reactor, self.app_state)
@@ -91,6 +102,13 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--mock-gpio', action='store_true',
                         help="run without gpio for dev/test on a non-pi system")
     settings = parser.parse_args()
+
+
+    if not settings.mock_gpio:
+        GPIO.setmode(GPIO.BOARD)
+        Eink.EPD = EPD()
+        LFizz.EINK = Eink(reactor)
+        LFizz.EINK.clear()
 
     lf = LFizz("/etc/lfizz.conf")
     lf.run_lfizz()

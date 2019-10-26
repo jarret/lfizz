@@ -58,9 +58,10 @@ QUANTITY_CHANGE_THRESHOLD = 0.000001
 SATOSHIS_PER_BTC = 100000000
 
 class Invoicer(object):
-    def __init__(self, reactor, app_state):
+    def __init__(self, reactor, app_state, eink):
         self.reactor = reactor
         self.app_state = app_state
+        self.eink = eink
         self.api_key = self.app_state.static_facts['opennode_api_key']
         self.email = self.app_state.static_facts['email']
         self.price = self.app_state.static_facts['fiat_price']
@@ -161,6 +162,18 @@ class Invoicer(object):
 
     def produce_bolt11(self, bolt11):
         logging.info("produced: %s" % bolt11)
+        f = self.app_state.facts
+        bolt11 = f['current_bolt11']
+        satoshis = f['current_satoshis']
+        exchange_rate = f['exchange_rate']
+        exchange_rate_timestamp = f['exchange_rate_timestamp']
+        sf = self.app_state.static_facts
+        fiat_currency = sf['fiat_currency']
+        fiat_price = sf['fiat_price']
+        timezone = sf['timezone']
+        self.eink.output_qr(bolt11, satoshis, exchange_rate,
+                            exchange_rate_timestamp, fiat_currency,
+                            fiat_price, timezone)
 
     def produce_paid_event(self):
         logging.info("invoice was paid: VEND DRINK!")
