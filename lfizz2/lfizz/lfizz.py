@@ -18,11 +18,14 @@ from app_state import AppState
 #from network_ip import NetworkIp
 from opennode import Invoicer
 
+from log_setup import setup_logging
+
 class LFizz(Service):
     def __init__(self, config_file):
         super().__init__()
 
         self.config = self._parse_config(config_file)
+        self._setup_logging(self.config)
         self.app_state = AppState(self.config)
         self.invoicer = Invoicer(reactor, self.app_state)
        #self.strike_watcher = StrikeWatcher(reactor, self.actor, self.app_state)
@@ -40,6 +43,12 @@ class LFizz(Service):
         if config['OpenNode']['ApiKey'] == 'sk_your_api_key':
             sys.exit("please set your Node API key in %s" % config_file)
         return config
+
+    def _setup_logging(self, config):
+        if not config['Logging']['Enabled']:
+            return
+        filename = os.path.join(config['Logging']['Dir'], "lfizz.log")
+        setup_logging(filename)
 
     ###########################################################################
 

@@ -7,6 +7,7 @@ import requests
 import json
 import time
 import pytz
+import logging
 
 from twisted.internet import threads
 
@@ -88,8 +89,8 @@ class Invoicer(object):
                                             tz=pytz.timezone("US/Mountain"))
         estr = e.strftime('%b %d, %H:%M:%S')
 
-        print("setting current: %s %s %dsat %s" % (bolt11[-5:], invoice_id[-5:],
-                                                   sats, estr))
+        logging.debug("setting current: %s %s %dsat %s" % (bolt11[-5:],
+            invoice_id[-5:], sats, estr))
         self.app_state.facts['current_bolt11'] = bolt11
         self.app_state.facts['current_id'] = invoice_id
         self.app_state.facts['current_satoshis'] = sats
@@ -115,30 +116,22 @@ class Invoicer(object):
 
     def new_invoice(details):
         if not details['exchange_rate']:
-            print_red("no price info")
+            logging.errro("no price info")
             return None
         sats = Invoicer.calc_satoshis(details['exchange_rate'],
                                       details['price'])
         description = Invoicer.gen_description(details)
-        # print("satoshis: %d - description: %s" % (sats, description))
         charge = OpenNode.create_charge(details['api_key'], sats, description)
-        # print(json.dumps(charge, indent=1, sort_keys=True))
         return charge
 
     def _new_invoice_thread_func(details):
-        # print("thread func")
-        #print("thread: details: %s" % details)
         return Invoicer.new_invoice(details)
 
     def _new_invoice_callback(self, result):
         if not result:
             # try again?
-            # print("trouble getting invoice!")
             self.reactor.callLater(3, self.new_invoice_defer)
             return
-
-        #print("invoice:")
-        #print(json.dumps(result))
 
         i = result['data']
         if self.app_state.facts['current_bolt11'] != None:
@@ -150,7 +143,7 @@ class Invoicer(object):
 
     def new_invoice_defer(self):
         if not self.app_state.facts['exchange_rate']:
-            print("don't have the price yet!")
+            logging.error("don't have the price yet!")
             return
 
         details = {'price':         self.price,
@@ -167,18 +160,18 @@ class Invoicer(object):
     ############################################################################
 
     def produce_bolt11(self, bolt11):
-        print_chill_purple(bolt11)
+        logging.info("produced: %s" % bolt11)
 
     def produce_paid_event(self):
-        print_chill_purple("VEND DRINK!")
+        logging.info("invoice was paid: VEND DRINK!")
 
     ############################################################################
 
     def _current_check_paid_callback(self, result):
         if not result:
-            print_red("could not check invoice paid?")
+            logging.error("could not check invoice paid?")
             return
-        print("current invoice: %s" % result)
+        logging.debug("current invoice: %s" % result)
 
         if result == "paid":
             self.produce_paid_event()
@@ -194,9 +187,9 @@ class Invoicer(object):
 
     def _last_check_paid_callback(self, result):
         if not result:
-            print_red("could not check last paid?")
+            logging.error("could not check last paid?")
             return
-        print("last invoice: %s" % result)
+        logging.debug("last invoice: %s" % result)
 
         if result == "paid":
             self.produce_paid_event()
@@ -208,18 +201,16 @@ class Invoicer(object):
 
     def _check_paid_thread_func(details):
         try:
-            #print("details %s" % details)
             data = OpenNode.poll_charge(details['api_key'],
                                         details['charge_id'])
         except Exception as e:
-            print("could not check paid! %s" % e)
+            logging.exception("could not check paid! %s" % e)
             return None
-        #print(json.dumps(data))
         return data['data']['status']
 
     def current_check_paid_defer(self):
         if not self.app_state.facts['current_id']:
-            print("no current invoice")
+            logging.error("no current invoice")
             return
         current_details = {'api_key':   self.api_key,
                            'charge_id': self.app_state.facts['current_id']}
@@ -229,7 +220,7 @@ class Invoicer(object):
 
     def last_check_paid_defer(self):
         if not self.app_state.facts['last_id']:
-            print("no last invoice")
+            logging.debug("no last invoice")
             self.reactor.callLater(2.0, self.last_check_paid_defer)
             return
         last_details = {'api_key':   self.api_key,
@@ -247,20 +238,20 @@ class Invoicer(object):
             self.app_state.facts['exchange_rate'],
             self.app_state.static_facts['fiat_price'])
         old_sats = self.app_state.facts['current_satoshis']
-        print("old sats: %d  new sats %d" % (old_sats, new_sats))
+        logging.info("old sats: %d  new sats %d" % (old_sats, new_sats))
 
         change = float(new_sats) / float(old_sats)
         quantity_change = abs(1.0 - change)
-        print_chill_light_blue("quantity change: %0.6f" % quantity_change)
+        logging.info("quantity change: %0.6f" % quantity_change)
         if quantity_change > QUANTITY_CHANGE_THRESHOLD:
             self.deprecate_current_invoice()
             self.reactor.callLater(0.1, self.new_invoice_defer)
 
     def _get_exchange_callback(self, result):
         if not result:
-            print_red("could not get exchange rate?")
+            logging.error("could not get exchange rate?")
             return
-        print("rate: %s" % result)
+        logging.info("rate: %s" % result)
         self.app_state.facts['exchange_rate'] = result
         self.app_state.facts['exchange_rate_timestamp'] = time.time()
 
@@ -271,7 +262,7 @@ class Invoicer(object):
         try:
             data = OpenNode.poll_exchange()
         except Exception as e:
-            print("could not get exchange rate! %s" % e)
+            loggin.exception("could not get exchange rate! %s" % e)
             return None
         return data['data']['BTCCAD']['CAD']
 
