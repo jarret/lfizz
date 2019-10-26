@@ -52,7 +52,7 @@ class OpenNode(object):
 
 ###############################################################################
 
-QUANTITY_CHANGE_THRESHOLD = 0.0001
+QUANTITY_CHANGE_THRESHOLD = 0.000001
 
 SATOSHIS_PER_BTC = 100000000
 
@@ -84,6 +84,12 @@ class Invoicer(object):
         self.app_state.facts['last_expiry'] = None
 
     def set_current_invoice(self, bolt11, invoice_id, sats, expiry):
+        e = datetime.datetime.fromtimestamp(expiry,
+                                            tz=pytz.timezone("US/Mountain"))
+        estr = e.strftime('%b %d, %H:%M:%S')
+
+        print("setting current: %s %s %dsat %s" % (bolt11[-5:], invoice_id[-5:],
+                                                   sats, estr))
         self.app_state.facts['current_bolt11'] = bolt11
         self.app_state.facts['current_id'] = invoice_id
         self.app_state.facts['current_satoshis'] = sats
@@ -184,21 +190,20 @@ class Invoicer(object):
             self.reactor.callLater(0.1, self.new_invoice_defer)
             self.reactor.callLater(5.0, self.current_check_paid_defer)
         else:
-            self.reactor.callLater(1.0, self.current_check_paid_defer)
+            self.reactor.callLater(2.0, self.current_check_paid_defer)
 
     def _last_check_paid_callback(self, result):
         if not result:
             print_red("could not check last paid?")
             return
-        print("last invoice: %s %s" % result)
+        print("last invoice: %s" % result)
 
         if result == "paid":
             self.produce_paid_event()
             self.retire_last_invoice()
-        elif result == "expired":
+        if result == "expired":
             self.retire_last_invoice()
-        else:
-            self.reactor.callLater(1.0, self.last_check_paid_defer)
+        self.reactor.callLater(2.0, self.last_check_paid_defer)
 
 
     def _check_paid_thread_func(details):
@@ -225,6 +230,7 @@ class Invoicer(object):
     def last_check_paid_defer(self):
         if not self.app_state.facts['last_id']:
             print("no last invoice")
+            self.reactor.callLater(2.0, self.last_check_paid_defer)
             return
         last_details = {'api_key':   self.api_key,
                         'charge_id': self.app_state.facts['last_id']}
@@ -234,14 +240,14 @@ class Invoicer(object):
 
     ############################################################################
 
-    def _check_invoice_exhange_rate(self):
+    def _check_invoice_exchange_rate(self):
         if not self.app_state.facts['current_id']:
             return
-        self.app_state.facts['exchange_rate']
         new_sats = Invoicer.calc_satoshis(
             self.app_state.facts['exchange_rate'],
             self.app_state.static_facts['fiat_price'])
-        old_sats = self.app_state.facts['current_satoshis'] = sats
+        old_sats = self.app_state.facts['current_satoshis']
+        print("old sats: %d  new sats %d" % (old_sats, new_sats))
 
         change = float(new_sats) / float(old_sats)
         quantity_change = abs(1.0 - change)
@@ -257,6 +263,8 @@ class Invoicer(object):
         print("rate: %s" % result)
         self.app_state.facts['exchange_rate'] = result
         self.app_state.facts['exchange_rate_timestamp'] = time.time()
+
+        self._check_invoice_exchange_rate()
         self.reactor.callLater(10.0, self.get_exchange_defer)
 
     def _get_exchange_thread_func():
