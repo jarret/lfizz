@@ -23,8 +23,7 @@ from app_state import AppState
 #from network_ip import NetworkIp
 from opennode import Invoicer
 from eink import Eink
-
-
+from machine import Machine
 
 from log_setup import setup_logging
 
@@ -37,7 +36,8 @@ class LFizz(Service):
         self.config = self._parse_config(config_file)
         self._setup_logging(self.config)
         self.app_state = AppState(self.config)
-        self.invoicer = Invoicer(reactor, self.app_state, LFizz.EINK)
+        self.machine = Machine(reactor, self.app_state, LFizz.EINK)
+        self.invoicer = Invoicer(reactor, self.app_state, self.machine)
 
        #self.strike_watcher = StrikeWatcher(reactor, self.actor, self.app_state)
         #self.fiat_price = FiatPrice(reactor, self.app_state)
@@ -68,6 +68,7 @@ class LFizz(Service):
 #        self.fiat_price.run()
 #        self.network_ip.run()
         self.invoicer.run()
+        self.machine.run()
 #        self.strike_watcher.run()
         reactor.run()
 

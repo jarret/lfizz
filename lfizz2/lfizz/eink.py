@@ -189,6 +189,47 @@ class Eink(object):
 
     ###########################################################################
 
+    def draw_random_1_func():
+        text_image = Image.new('1', (300, 100), WHITE)
+        text_draw = ImageDraw.Draw(text_image)
+        Eink._draw_text_to_image(text_draw, "foo", "bar", "boof")
+        text_image = text_image.transpose(Image.ROTATE_90)
+        full_image = Image.new('1', (400, 300), WHITE)
+        full_image.paste(text_image, (180, 0))
+        Eink._display_image(full_image)
+
+    def draw_random_1(self):
+        self.queue_draw(Eink.draw_random_1_func)
+        self.draw_from_queue()
+
+    def draw_random_2_func():
+        text_image = Image.new('1', (300, 100), WHITE)
+        text_draw = ImageDraw.Draw(text_image)
+        Eink._draw_text_to_image(text_draw, "eat", "my", "shorts")
+        text_image = text_image.transpose(Image.ROTATE_90)
+        full_image = Image.new('1', (400, 300), WHITE)
+        full_image.paste(text_image, (180, 0))
+        Eink._display_image(full_image)
+
+    def draw_random_2(self):
+        self.queue_draw(Eink.draw_random_2_func)
+        self.draw_from_queue()
+
+    def draw_random_3_func():
+        text_image = Image.new('1', (300, 100), WHITE)
+        text_draw = ImageDraw.Draw(text_image)
+        Eink._draw_text_to_image(text_draw, "herp", "a", "derp")
+        text_image = text_image.transpose(Image.ROTATE_90)
+        full_image = Image.new('1', (400, 300), WHITE)
+        full_image.paste(text_image, (180, 0))
+        Eink._display_image(full_image)
+
+    def draw_random_3(self):
+        self.queue_draw(Eink.draw_random_3_func)
+        self.draw_from_queue()
+
+    ###########################################################################
+
     def draw_error():
         text_image = Image.new('1', (300, 100), WHITE)
         text_draw = ImageDraw.Draw(text_image)
