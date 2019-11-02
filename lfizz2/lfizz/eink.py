@@ -57,7 +57,7 @@ class Eink(object):
 
     def draw_from_queue(self):
         print_fancy_blue("check queue. Drawing: %s Next: %s" % (
-            self.drawing, self.draw_next is None))
+            self.drawing, self.draw_next is not None))
 
         if self.drawing:
             return

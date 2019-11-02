@@ -24,6 +24,7 @@ from app_state import AppState
 from opennode import Invoicer
 from eink import Eink
 from machine import Machine
+from electrical import Electrical
 
 from log_setup import setup_logging
 
@@ -38,6 +39,7 @@ class LFizz(Service):
         self.app_state = AppState(self.config)
         self.machine = Machine(reactor, self.app_state, LFizz.EINK)
         self.invoicer = Invoicer(reactor, self.app_state, self.machine)
+        self.electical = Electrical(reactor, self.machine)
 
        #self.strike_watcher = StrikeWatcher(reactor, self.actor, self.app_state)
         #self.fiat_price = FiatPrice(reactor, self.app_state)
@@ -98,7 +100,9 @@ if __name__ == '__main__':
 
 
     if not settings.mock_gpio:
-        GPIO.setmode(GPIO.BOARD)
+        if GPIO.getmode() != GPIO.BOARD:
+            GPIO.setmode(GPIO.BOARD)
+        Electrical.setup_gpio()
         Eink.EPD = EPD()
         LFizz.EINK = Eink(reactor)
 

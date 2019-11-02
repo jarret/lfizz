@@ -14,6 +14,10 @@ class Machine(object):
         self.eink = eink
         self.toggle = 0
         self.state = "INIT"
+        self.electrical = None
+
+    def set_electrical(self, electrical):
+        self.electrical = electrical
 
     def change_state(self, new_state):
         assert new_state in MACHINE_STATES
@@ -50,12 +54,14 @@ class Machine(object):
         logging.info("invoice was paid: VEND DRINK!")
         self.change_state('VENDING')
         self.eink.draw_select_drink()
-        # TODO - trigger relay
+        self.electrical.trigger_coin_mech()
 
     def post_vend_finished(self):
-        # TODO - optoisolator in triggers this
         logging.info("drink finished vending")
-        self.change_state('INVOICING')
+        if self.state == "VENDING":
+            self.change_state('INVOICING')
+        else:
+            print("disregarding vend finished - wasn't expecting it")
 
     ##########################################################################
 
