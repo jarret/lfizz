@@ -79,6 +79,12 @@ class Invoicer(object):
         self.app_state.facts['last_expiry'] = (
             self.app_state.facts['current_expiry'])
 
+    def retire_current_invoice(self):
+        self.app_state.facts['current_bolt11'] = None
+        self.app_state.facts['current_id'] = None
+        self.app_state.facts['current_satoshis'] = None
+        self.app_state.facts['current_expiry'] = None
+
     def retire_last_invoice(self):
         self.app_state.facts['last_bolt11'] = None
         self.app_state.facts['last_id'] = None
@@ -164,7 +170,7 @@ class Invoicer(object):
         self.machine.post_bolt11(bolt11)
 
     def produce_paid_event(self):
-        self.eink.post_paid_event()
+        self.machine.post_paid_event()
 
     ############################################################################
 
@@ -176,11 +182,11 @@ class Invoicer(object):
 
         if result == "paid":
             self.produce_paid_event()
-            self.deprecate_current_invoice()
+            self.retire_current_invoice()
             self.reactor.callLater(0.1, self.new_invoice_defer)
             self.reactor.callLater(5.0, self.current_check_paid_defer)
         elif result == "expired":
-            self.deprecate_current_invoice()
+            self.retire_current_invoice()
             self.reactor.callLater(0.1, self.new_invoice_defer)
             self.reactor.callLater(5.0, self.current_check_paid_defer)
         else:

@@ -64,20 +64,12 @@ class LFizz(Service):
     ###########################################################################
 
     def run_lfizz(self):
-#        self.led_blink.run()
-#        self.fiat_price.run()
-#        self.network_ip.run()
         self.invoicer.run()
         self.machine.run()
-#        self.strike_watcher.run()
         reactor.run()
 
     def stop_lfizz(self):
-#        self.led_blink.stop()
-#        self.fiat_price.stop()
-#        self.network_ip.stop()
         self.invoicer.stop()
-#        self.strike_watcher.stop()
         reactor.stop()
 
     ###########################################################################
@@ -109,7 +101,6 @@ if __name__ == '__main__':
         GPIO.setmode(GPIO.BOARD)
         Eink.EPD = EPD()
         LFizz.EINK = Eink(reactor)
-        LFizz.EINK.clear()
 
     lf = LFizz("/etc/lfizz.conf")
     lf.run_lfizz()

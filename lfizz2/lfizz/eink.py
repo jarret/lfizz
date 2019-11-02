@@ -26,16 +26,14 @@ FONT = "%s/third_party/Minecraftia.ttf" % SRC_PATH
 
 class Eink(object):
     EPD = None
+
     def __init__(self, reactor):
         Eink.EPD.init()
-
+        Eink.EPD.Clear(WHITE)
+        Eink.EPD.wait_until_idle()
         self.draw_next = None
         self.drawing = False
         self.reactor = reactor
-
-    def clear(self):
-        Eink.EPD.Clear(WHITE)
-        Eink.EPD.wait_until_idle()
 
     def _display_image(image):
         Eink.EPD.wait_until_idle()
@@ -58,13 +56,14 @@ class Eink(object):
         self.draw_next = {'func': func, 'params': params}
 
     def draw_from_queue(self):
-        print_fancy_blue("draw attempt")
+        print_fancy_blue("check queue. Drawing: %s Next: %s" % (
+            self.drawing, self.draw_next is None))
 
         if self.drawing:
             return
         if not self.draw_next:
             return
-
+        self.drawing = True
         draw = self.draw_next
         d = threads.deferToThread(self.draw_and_delay, draw['func'],
                                   draw['params'])
@@ -79,37 +78,6 @@ class Eink(object):
     def finish_drawing(self, result):
         print_fancy_blue("finish queue op")
         self.drawing = False
-        self.draw_from_queue()
-
-    ###########################################################################
-
-    def draw_first_boot():
-        text_image = Image.new('1', (300, 100), WHITE)
-        text_draw = ImageDraw.Draw(text_image)
-        Eink._draw_text_to_image(text_draw, "first boot", "finding network",
-                                 "hang on, Hoss")
-        text_image = text_image.transpose(Image.ROTATE_90)
-        full_image = Image.new('1', (400, 300), WHITE)
-        full_image.paste(text_image, (180, 0))
-        Eink._display_image(full_image)
-
-    def output_first_boot(self):
-        self.queue_draw(Eink.draw_first_boot)
-        self.draw_from_queue()
-
-    ###########################################################################
-
-    def draw_boot_up(ip, exchange_rate, invoice):
-        text_image = Image.new('1', (300, 100), WHITE)
-        text_draw = ImageDraw.Draw(text_image)
-        Eink._draw_text_to_image(text_draw, ip, exchange_rate, invoice)
-        text_image = text_image.transpose(Image.ROTATE_90)
-        full_image = Image.new('1', (400, 300), WHITE)
-        full_image.paste(text_image, (180, 0))
-        Eink._display_image(full_image)
-
-    def output_boot_up(self, ip, exchange_rate, invoice):
-        self.queue_draw(Eink.draw_boot_up, ip, exchange_rate, invoice)
         self.draw_from_queue()
 
     ###########################################################################
@@ -138,8 +106,8 @@ class Eink(object):
         draw.text((3, 40), line2, font=font_big, fill=BLACK)
         draw.text((3, 75), line3, font=font, fill=BLACK)
 
-    def draw_qr(bolt11, satoshis, exchange_rate, exchange_rate_timestamp,
-                fiat_currency, fiat_price, timezone):
+    def render_draw_qr(bolt11, satoshis, exchange_rate, exchange_rate_timestamp,
+                       fiat_currency, fiat_price, timezone):
         #line1 = "Doesn't work, WIP - Jarret"
         line1 = "Babies are Dying."
         line2 = "$%.2f = %dsat" % (fiat_price, satoshis)
@@ -164,81 +132,43 @@ class Eink(object):
 
         Eink._display_image(full_image)
 
-    def output_qr(self, bolt11, satoshis, exchange_rate,
-                  exchange_rate_timestamp, fiat_currency, fiat_price,
-                  timezone):
-        self.queue_draw(Eink.draw_qr, bolt11, satoshis, exchange_rate,
+    def draw_qr(self, bolt11, satoshis, exchange_rate,
+                exchange_rate_timestamp, fiat_currency, fiat_price,
+                timezone):
+        self.queue_draw(Eink.render_draw_qr, bolt11, satoshis, exchange_rate,
                         exchange_rate_timestamp, fiat_currency, fiat_price,
                         timezone)
         self.draw_from_queue()
 
     ###########################################################################
 
-    def draw_select_drink():
+    def draw_three_lines(line1, line2, line3):
         text_image = Image.new('1', (300, 100), WHITE)
         text_draw = ImageDraw.Draw(text_image)
-        Eink._draw_text_to_image(text_draw, "select", "yer", "drink")
-        text_image = text_image.transpose(Image.ROTATE_90)
-        full_image = Image.new('1', (400, 300), WHITE)
-        full_image.paste(text_image, (180, 0))
-        Eink._display_image(full_image)
-
-    def output_select_drink(self):
-        self.queue_draw(Eink.draw_select_drink)
-        self.draw_from_queue()
-
-    ###########################################################################
-
-    def draw_random_1_func():
-        text_image = Image.new('1', (300, 100), WHITE)
-        text_draw = ImageDraw.Draw(text_image)
-        Eink._draw_text_to_image(text_draw, "foo", "bar", "boof")
+        Eink._draw_text_to_image(text_draw, line1, line2, line3)
         text_image = text_image.transpose(Image.ROTATE_90)
         full_image = Image.new('1', (400, 300), WHITE)
         full_image.paste(text_image, (180, 0))
         Eink._display_image(full_image)
 
     def draw_random_1(self):
-        self.queue_draw(Eink.draw_random_1_func)
+        self.queue_draw(Eink.draw_three_lines, "eat", "my", "shorts")
         self.draw_from_queue()
-
-    def draw_random_2_func():
-        text_image = Image.new('1', (300, 100), WHITE)
-        text_draw = ImageDraw.Draw(text_image)
-        Eink._draw_text_to_image(text_draw, "eat", "my", "shorts")
-        text_image = text_image.transpose(Image.ROTATE_90)
-        full_image = Image.new('1', (400, 300), WHITE)
-        full_image.paste(text_image, (180, 0))
-        Eink._display_image(full_image)
 
     def draw_random_2(self):
-        self.queue_draw(Eink.draw_random_2_func)
+        self.queue_draw(Eink.draw_three_lines, "your beard", "is", "weird")
         self.draw_from_queue()
 
-    def draw_random_3_func():
-        text_image = Image.new('1', (300, 100), WHITE)
-        text_draw = ImageDraw.Draw(text_image)
-        Eink._draw_text_to_image(text_draw, "herp", "a", "derp")
-        text_image = text_image.transpose(Image.ROTATE_90)
-        full_image = Image.new('1', (400, 300), WHITE)
-        full_image.paste(text_image, (180, 0))
-        Eink._display_image(full_image)
-
     def draw_random_3(self):
-        self.queue_draw(Eink.draw_random_3_func)
+        self.queue_draw(Eink.draw_three_lines, "herp", "a", "derp")
+        self.draw_from_queue()
+
+    def draw_select_drink(self):
+        self.queue_draw(Eink.draw_three_lines, "select", "yer", "drink")
+        self.draw_from_queue()
+
+    def draw_error(self):
+        self.queue_draw(Eink.draw_three_lines, "WTF", "Problemo", "dudez")
         self.draw_from_queue()
 
     ###########################################################################
-
-    def draw_error():
-        text_image = Image.new('1', (300, 100), WHITE)
-        text_draw = ImageDraw.Draw(text_image)
-        Eink._draw_text_to_image(text_draw, "WTF", "problemo", "dude")
-        text_image = text_image.transpose(Image.ROTATE_90)
-        full_image = Image.new('1', (400, 300), WHITE)
-        full_image.paste(text_image, (180, 0))
-        Eink._display_image(full_image)
-
-    def output_error(self):
-        self.queue_draw(Eink.draw_error)
-        self.draw_from_queue()

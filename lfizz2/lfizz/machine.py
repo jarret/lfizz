@@ -4,16 +4,31 @@
 
 import logging
 
+
+MACHINE_STATES = {'INIT', "INVOICING", "VENDING"}
+
 class Machine(object):
     def __init__(self, reactor, app_state, eink):
         self.reactor = reactor
         self.app_state = app_state
         self.eink = eink
         self.toggle = 0
+        self.state = "INIT"
 
-    def post_bolt11(self, bolt11):
-        logging.info("produced: %s" % bolt11)
+    def change_state(self, new_state):
+        assert new_state in MACHINE_STATES
+        self.state = new_state
+
+        if new_state == "INVOICING":
+            f = self.app_state.facts
+            self.bolt11_on_screen(f['current_bolt11'])
+
+    def bolt11_on_screen(self, bolt11):
+        logging.info("bolt11 on screen: %s" % bolt11)
         f = self.app_state.facts
+        if not f['current_bolt11']:
+            logging.debug("no current bolt11 to display")
+
         bolt11 = f['current_bolt11']
         satoshis = f['current_satoshis']
         exchange_rate = f['exchange_rate']
@@ -22,14 +37,27 @@ class Machine(object):
         fiat_currency = sf['fiat_currency']
         fiat_price = sf['fiat_price']
         timezone = sf['timezone']
-        self.eink.output_qr(bolt11, satoshis, exchange_rate,
-                            exchange_rate_timestamp, fiat_currency,
-                            fiat_price, timezone)
+        self.eink.draw_qr(bolt11, satoshis, exchange_rate,
+                          exchange_rate_timestamp, fiat_currency,
+                          fiat_price, timezone)
+
+    def post_bolt11(self, bolt11):
+        logging.info("produced bolt11: %s" % bolt11)
+        if self.state in {"INVOICING", "INIT"}:
+            self.bolt11_on_screen(bolt11)
 
     def post_paid_event(self):
-        self.eink.output_select_drink()
         logging.info("invoice was paid: VEND DRINK!")
+        self.change_state('VENDING')
+        self.eink.draw_select_drink()
+        # TODO - trigger relay
 
+    def post_vend_finished(self):
+        # TODO - optoisolator in triggers this
+        logging.info("drink finished vending")
+        self.change_state('INVOICING')
+
+    ##########################################################################
 
     def draw_stuff(self):
         print("drawing random stuff")
@@ -43,4 +71,5 @@ class Machine(object):
         self.reactor.callLater(3.0, self.draw_stuff)
 
     def run(self):
-        self.reactor.callLater(3.0, self.draw_stuff)
+        #self.reactor.callLater(10.0, self.draw_stuff)
+        pass
