@@ -17,33 +17,34 @@ import RPi.GPIO as GPIO
 
 from third_party.waveshare.epd4in2 import EPD
 
-#from led_blink import LedBlink
 from app_state import AppState
-#from fiat_price import FiatPrice
-#from network_ip import NetworkIp
 from opennode import Invoicer
 from eink import Eink
 from machine import Machine
 from electrical import Electrical
 
 from log_setup import setup_logging
+from network_health import NetworkHealth
 
 class LFizz(Service):
-    EINK = None
-
-    def __init__(self, config_file):
+    def __init__(self, config_file, mock_gpio):
         super().__init__()
 
+        if not mock_gpio:
+            GPIO.setwarnings(False)
+            if GPIO.getmode() != GPIO.BOARD:
+                GPIO.setmode(GPIO.BOARD)
+            Electrical.setup_gpio()
+            Eink.EPD = EPD()
+
+        self.eink = Eink(reactor)
         self.config = self._parse_config(config_file)
         self._setup_logging(self.config)
         self.app_state = AppState(self.config)
-        self.machine = Machine(reactor, self.app_state, LFizz.EINK)
+        self.machine = Machine(reactor, self.app_state, self.eink)
+        self.network_health = NetworkHealth(reactor, self.machine)
         self.invoicer = Invoicer(reactor, self.app_state, self.machine)
         self.electical = Electrical(reactor, self.machine)
-
-       #self.strike_watcher = StrikeWatcher(reactor, self.actor, self.app_state)
-        #self.fiat_price = FiatPrice(reactor, self.app_state)
-        #self.network_ip = NetworkIp(reactor, self.app_state)
 
 
     ###########################################################################
@@ -66,6 +67,7 @@ class LFizz(Service):
     ###########################################################################
 
     def run_lfizz(self):
+        self.network_health.run()
         self.invoicer.run()
         self.machine.run()
         reactor.run()
@@ -76,15 +78,15 @@ class LFizz(Service):
 
     ###########################################################################
 
-#    def startService(self):
-#        super().startService()
-#        self.run_lfizz()
-#
-#    def stopService(self):
-#        super().stopService()
-#        self.stop_lfizz()
-#        reactor.stop()
-#
+    def startService(self):
+        super().startService()
+        self.run_lfizz()
+
+    def stopService(self):
+        super().stopService()
+        self.stop_lfizz()
+        reactor.stop()
+
 
 ###############################################################################
 
@@ -98,13 +100,5 @@ if __name__ == '__main__':
                         help="run without gpio for dev/test on a non-pi system")
     settings = parser.parse_args()
 
-
-    if not settings.mock_gpio:
-        if GPIO.getmode() != GPIO.BOARD:
-            GPIO.setmode(GPIO.BOARD)
-        Electrical.setup_gpio()
-        Eink.EPD = EPD()
-        LFizz.EINK = Eink(reactor)
-
-    lf = LFizz("/etc/lfizz.conf")
+    lf = LFizz("/etc/lfizz.conf", settings.mock_gpio)
     lf.run_lfizz()

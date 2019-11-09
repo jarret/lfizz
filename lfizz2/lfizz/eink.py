@@ -108,14 +108,12 @@ class Eink(object):
 
     def render_draw_qr(bolt11, satoshis, exchange_rate, exchange_rate_timestamp,
                        fiat_currency, fiat_price, timezone):
-        #line1 = "Doesn't work, WIP - Jarret"
-        line1 = "Babies are Dying."
+        line1 = "Beverages for Sale."
         line2 = "$%.2f = %dsat" % (fiat_price, satoshis)
         dt = datetime.datetime.fromtimestamp(exchange_rate_timestamp,
                                              tz=pytz.timezone(timezone))
         time_str = dt.strftime('%H:%M:%S')
-        #line3 =  "$%.2f BTC%s - %s" % (exchange_rate, fiat_currency, time_str)
-        line3 = "Doesn't work, WIP - Jarret"
+        line3 =  "$%.2f BTC%s - %s" % (exchange_rate, fiat_currency, time_str)
 
         text_image = Image.new('1', (300, 100), WHITE)
         text_draw = ImageDraw.Draw(text_image)

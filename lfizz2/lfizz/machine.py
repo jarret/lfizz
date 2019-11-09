@@ -5,7 +5,7 @@
 import logging
 
 
-MACHINE_STATES = {'INIT', "INVOICING", "VENDING"}
+MACHINE_STATES = {'INIT', "INVOICING", "VENDING", "ERROR"}
 
 class Machine(object):
     def __init__(self, reactor, app_state, eink):
@@ -49,8 +49,17 @@ class Machine(object):
         logging.info("produced bolt11: %s" % bolt11)
         if self.state in {"INVOICING", "INIT"}:
             self.bolt11_on_screen(bolt11)
+            self.change_state("INVOICING")
+        if self.state is "ERROR":
+            logging.error("system is errored")
+            return
 
     def post_paid_event(self):
+        if self.state == "ERROR":
+            logging.error("system is errored")
+            return
+        if self.state != "INVOICING":
+            return
         logging.info("invoice was paid: VEND DRINK!")
         self.change_state('VENDING')
         self.eink.draw_select_drink()
@@ -62,6 +71,10 @@ class Machine(object):
             self.change_state('INVOICING')
         else:
             print("disregarding vend finished - wasn't expecting it")
+
+    def post_error(self):
+        self.change_state('ERROR')
+        self.eink.draw_error()
 
     ##########################################################################
 

@@ -128,7 +128,13 @@ class Invoicer(object):
         sats = Invoicer.calc_satoshis(details['exchange_rate'],
                                       details['price'])
         description = Invoicer.gen_description(details)
-        charge = OpenNode.create_charge(details['api_key'], sats, description)
+        try:
+            charge = OpenNode.create_charge(details['api_key'], sats,
+                                            description)
+        except Exception as e:
+            logging.exception(e)
+            self.machine.post_error()
+            return None
         return charge
 
     def _new_invoice_thread_func(details):
