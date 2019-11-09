@@ -15,6 +15,8 @@ from twisted.internet import reactor
 
 import RPi.GPIO as GPIO
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from third_party.waveshare.epd4in2 import EPD
 
 from app_state import AppState
@@ -27,7 +29,7 @@ from log_setup import setup_logging
 from network_health import NetworkHealth
 
 class LFizz(Service):
-    def __init__(self, config_file, mock_gpio):
+    def __init__(self, config_file, mock_gpio=False):
         super().__init__()
 
         if not mock_gpio:
