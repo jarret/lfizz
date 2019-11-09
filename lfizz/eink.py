@@ -97,18 +97,24 @@ class Eink(object):
 
     def _draw_text_to_image(draw, line1, line2, line3):
         font = ImageFont.truetype(FONT, 16)
-        font_big = ImageFont.truetype(FONT, 20)
         #print("1: %s 2: %s 3: %s" % (line1, line2, line3))
         line1 = str(line1) if line1 else "(none)"
         line2 = str(line2) if line2 else "(none)"
         line3 = str(line3) if line3 else "(none)"
-        draw.text((3, 5), line1, font=font, fill=BLACK)
-        draw.text((3, 40), line2, font=font_big, fill=BLACK)
-        draw.text((3, 75), line3, font=font, fill=BLACK)
+        width1 = draw.textsize(line1, font=font)
+        width2 = draw.textsize(line2, font=font)
+        width3 = draw.textsize(line3, font=font)
+        x1 = max(int((300 / 2) - (width1[0] / 2)), 0)
+        x2 = max(int((300 / 2) - (width2[0] / 2)), 0)
+        x3 = max(int((300 / 2) - (width3[0] / 2)), 0)
+        #print("1: %s 2: %s 3: %s" % (x1, x2, x3))
+        draw.text((x1, 0), line1, font=font, fill=BLACK)
+        draw.text((x2, 30), line2, font=font, fill=BLACK)
+        draw.text((x3, 60), line3, font=font, fill=BLACK)
 
     def render_draw_qr(bolt11, satoshis, exchange_rate, exchange_rate_timestamp,
                        fiat_currency, fiat_price, timezone):
-        line1 = "Beverages for Sale."
+        line1 = "Beverages for Sale"
         line2 = "$%.2f = %dsat" % (fiat_price, satoshis)
         dt = datetime.datetime.fromtimestamp(exchange_rate_timestamp,
                                              tz=pytz.timezone(timezone))
@@ -149,24 +155,12 @@ class Eink(object):
         full_image.paste(text_image, (180, 0))
         Eink._display_image(full_image)
 
-    def draw_random_1(self):
-        self.queue_draw(Eink.draw_three_lines, "eat", "my", "shorts")
-        self.draw_from_queue()
-
-    def draw_random_2(self):
-        self.queue_draw(Eink.draw_three_lines, "your beard", "is", "weird")
-        self.draw_from_queue()
-
-    def draw_random_3(self):
-        self.queue_draw(Eink.draw_three_lines, "herp", "a", "derp")
-        self.draw_from_queue()
-
     def draw_select_drink(self):
-        self.queue_draw(Eink.draw_three_lines, "select", "yer", "drink")
+        self.queue_draw(Eink.draw_three_lines, "Please", "Select", "Drink")
         self.draw_from_queue()
 
     def draw_error(self):
-        self.queue_draw(Eink.draw_three_lines, "WTF", "Problemo", "dudez")
+        self.queue_draw(Eink.draw_three_lines, "Error!", "Please", "Reboot")
         self.draw_from_queue()
 
     ###########################################################################

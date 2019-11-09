@@ -23,10 +23,6 @@ class Machine(object):
         assert new_state in MACHINE_STATES
         self.state = new_state
 
-        if new_state == "INVOICING":
-            f = self.app_state.facts
-            self.bolt11_on_screen(f['current_bolt11'])
-
     def bolt11_on_screen(self, bolt11):
         logging.info("bolt11 on screen: %s" % bolt11)
         f = self.app_state.facts
@@ -69,6 +65,8 @@ class Machine(object):
         logging.info("drink finished vending")
         if self.state == "VENDING":
             self.change_state('INVOICING')
+            f = self.app_state.facts
+            self.bolt11_on_screen(f['current_bolt11'])
         else:
             print("disregarding vend finished - wasn't expecting it")
 
