@@ -24,6 +24,7 @@ from opennode import Invoicer
 from eink import Eink
 from machine import Machine
 from electrical import Electrical
+from leds import Leds
 
 from log_setup import setup_logging
 from network_health import NetworkHealth
@@ -43,7 +44,8 @@ class LFizz(Service):
         self.config = self._parse_config(config_file)
         self._setup_logging(self.config)
         self.app_state = AppState(self.config)
-        self.machine = Machine(reactor, self.app_state, self.eink)
+        self.leds = Leds()
+        self.machine = Machine(reactor, self.app_state, self.eink, self.leds)
         self.network_health = NetworkHealth(reactor, self.machine)
         self.invoicer = Invoicer(reactor, self.app_state, self.machine)
         self.electical = Electrical(reactor, self.machine)

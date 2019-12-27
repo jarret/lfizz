@@ -1,0 +1,17 @@
+[Unit]
+Description=Soda Machine Decoration
+
+[Service]
+ExecStart=/usr/local/bin/twistd \
+    --nodaemon \
+    --python=/home/pi/lfizz/blinkr.tac
+
+WorkingDirectory=/home/pi/blinkr-work
+
+User=root
+Group=root
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

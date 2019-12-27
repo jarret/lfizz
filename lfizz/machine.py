@@ -8,10 +8,11 @@ import logging
 MACHINE_STATES = {'INIT', "INVOICING", "VENDING", "ERROR"}
 
 class Machine(object):
-    def __init__(self, reactor, app_state, eink):
+    def __init__(self, reactor, app_state, eink, leds):
         self.reactor = reactor
         self.app_state = app_state
         self.eink = eink
+        self.leds = leds
         self.toggle = 0
         self.state = "INIT"
         self.electrical = None
@@ -22,6 +23,13 @@ class Machine(object):
     def change_state(self, new_state):
         assert new_state in MACHINE_STATES
         self.state = new_state
+
+        if new_state == "INVOICING":
+            self.leds.set_mode("ANT")
+        elif new_state == "VENDING":
+            self.leds.set_mode("RAINBOW")
+        else:
+            self.leds.set_mode("OCD")
 
     def bolt11_on_screen(self, bolt11):
         logging.info("bolt11 on screen: %s" % bolt11)
