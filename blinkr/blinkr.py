@@ -17,11 +17,11 @@ from txzmq import ZmqEndpoint, ZmqEndpointType
 from txzmq import ZmqFactory
 from txzmq import ZmqSubConnection
 
-from blinkr.ocd import Ocd
-from blinkr.ant import Ant
-from blinkr.rainbow import Rainbow
-from blinkr.flash import Flash
-from blinkr.quit import Quit
+from ocd import Ocd
+from ant import Ant
+from rainbow import Rainbow
+from flash import Flash
+from quit import Quit
 
 
 
@@ -30,7 +30,7 @@ ZMQ_ENDPOINT = "tcp://127.0.0.1:7777"
 ZMQ_TAG = "blinkr".encode("utf8")
 
 N_PIXELS = 338
-BRIGHTNESS = 1.0
+BRIGHTNESS = 0.3
 DATA_PIN = board.D18
 
 MODES = {"RAINBOW", "ANT", "OCD", "FLASH", "QUIT"}
@@ -63,8 +63,8 @@ class Blinkr(object):
                           auto_write=False)
         updates = {'RAINBOW': Rainbow(pixels),
                    'ANT':     Ant(pixels),
-                   'OCD':     Ocd(pixels)
-                   'FLASH':   Flash(pixels)
+                   'OCD':     Ocd(pixels),
+                   'FLASH':   Flash(pixels),
                    'QUIT':    Quit(pixels)}
         assert set(updates.keys()) == MODES
         mode = "OCD"

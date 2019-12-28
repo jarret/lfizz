@@ -8,7 +8,7 @@ class Animation():
     def mod256(v):
         return v % 256
 
-    def modpixel(v):
+    def modpixel(self, v):
         return v % len(self.pixels)
 
     def wheel(pos):

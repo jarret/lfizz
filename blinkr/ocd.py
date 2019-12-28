@@ -1,5 +1,6 @@
+import time
 import random
-from blinkr.animation import Animation
+from animation import Animation
 
 
 class Ocd(Animation):
@@ -27,7 +28,7 @@ class Ocd(Animation):
 
         now = time.time()
         if now > self.state['lerp_end_time']:
-            Animation.new_ocd_lerp(self.state)
+            self.new_ocd_lerp()
         progress = 1.0 - ((self.state['lerp_end_time'] - now) /
                     (self.state['lerp_end_time'] -
                      self.state['lerp_start_time']))
@@ -38,7 +39,7 @@ class Ocd(Animation):
         ant_color_pos = Animation.opposite(self.state['base_color_pos'])
         rgbs[ant_pixel] = Animation.wheel(ant_color_pos)
 
-        pixels[:] = rgbs[:]
-        pixels.write()
+        self.pixels[:] = rgbs[:]
+        self.pixels.write()
         self.state['counter'] += 1
         return 0

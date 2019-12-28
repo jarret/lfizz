@@ -1,5 +1,5 @@
 import random
-from blinkr.animation import Animation
+from animation import Animation
 
 
 class Ant(Animation):
@@ -18,15 +18,15 @@ class Ant(Animation):
         px_start = self.state['ant_pixel']
         px_stop = self.state['ant_pixel'] + len(self.pixels)
         for p in range(px_start, px_stop, 4):
-            ant_pixel = Animation.modpixel(p)
+            ant_pixel = self.modpixel(p)
             ant_color_pos = Animation.opposite(self.state['base_color_pos'])
             rgbs[ant_pixel] = Animation.wheel(ant_color_pos)
 
-        pixels[:] = rgbs[:]
-        pixels.write()
+        self.pixels[:] = rgbs[:]
+        self.pixels.write()
         self.state['counter'] += 1
         if self.state['counter'] % 10 == 0:
-            self.state['ant_pixel'] = Animation.modpixel(
+            self.state['ant_pixel'] = self.modpixel(
                 self.state['ant_pixel'] + 1)
         self.state['base_color_pos'] = Animation.mod256(
             self.state['base_color_pos'] + 1)
