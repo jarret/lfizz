@@ -61,6 +61,7 @@ class Implode(Animation):
         super().__init__(pixels)
         self.running = False
         self.not_next = list(NOT_NEXT_TO_BUTTONS)
+        self.color_pos = 0
 
     def setup(self):
         self.lerp_start_time = time.time()
@@ -75,23 +76,41 @@ class Implode(Animation):
             self.lerps.append({'start_pixel': start_pixel,
                                'end_pixel':   end_pixel})
 
+    def get_color(self, p, pixels_on, colors):
+        if p in pixels_on:
+            if p in colors:
+                return colors[p]
+            else:
+                return ON
+        else:
+            return OFF
+
     def exec_update(self):
         now = time.time()
+        colors = {}
         if now > self.lerp_end_time:
             pixels_on = NEXT_TO_BUTTONS
+            for b in sorted(NEXT_TO_BUTTONS):
+                colors[b] = Animation.wheelmod256(self.color_pos)
+                self.color_pos += 10
+                sleep = 0.03
         else:
             progress = 1.0 - ((self.lerp_end_time - now) /
                         (self.lerp_end_time - self.lerp_start_time))
             pixels_on = set()
+            color_pos = 0
             for l in self.lerps:
                 distance = l['end_pixel'] - l['start_pixel']
                 on_pixel = self.modpixel(l['start_pixel'] +
                                          round(distance * progress))
                 pixels_on.add(on_pixel)
+                colors[on_pixel] = Animation.wheelmod256(color_pos)
+                color_pos += 10
+            sleep = 0.01
 
-        rgbs = [(ON if p in pixels_on else OFF) for p in
+        rgbs = [self.get_color(p, pixels_on, colors) for p in
                 range(len(self.pixels))]
         self.pixels[:] = rgbs[:]
         self.pixels.write()
-        return 0.01
+        return sleep
 

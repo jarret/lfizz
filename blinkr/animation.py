@@ -24,6 +24,15 @@ class Animation():
             pos -= 170
             return (0, pos * 3, 255 - pos * 3)
 
+    def wheelmod256(pos):
+        pos = Animation.mod256(pos)
+        return Animation.wheel(pos)
+
+    def squeeze256(val, top):
+        val = val % top
+        factor = 256.0 / top
+        #print("factor: %.04f" % factor)
+        return round(factor * val)
 
     def opposite(pos):
         return Animation.mod256(pos + 128)
