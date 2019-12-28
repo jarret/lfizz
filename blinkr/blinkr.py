@@ -22,7 +22,7 @@ from ant import Ant
 from rainbow import Rainbow
 from flash import Flash
 from quit import Quit
-
+from implode import Implode
 
 
 ZMQ_ENDPOINT = "tcp://127.0.0.1:7777"
@@ -33,7 +33,7 @@ N_PIXELS = 338
 BRIGHTNESS = 0.3
 DATA_PIN = board.D18
 
-MODES = {"RAINBOW", "ANT", "OCD", "FLASH", "QUIT"}
+MODES = {"RAINBOW", "ANT", "OCD", "FLASH", "IMPLODE", "QUIT"}
 
 ###############################################################################
 
@@ -65,13 +65,17 @@ class Blinkr(object):
                    'ANT':     Ant(pixels),
                    'OCD':     Ocd(pixels),
                    'FLASH':   Flash(pixels),
+                   'IMPLODE': Implode(pixels),
                    'QUIT':    Quit(pixels)}
         assert set(updates.keys()) == MODES
         mode = "OCD"
         while True:
             try:
-                mode = queue.get_nowait()
-                assert mode in MODES, "unknown mode %s" % mode
+                new_mode = queue.get_nowait()
+                assert new_mode in MODES, "unknown mode %s" % mode
+                if new_mode != mode:
+                    updates[new_mode].setup()
+                mode = new_mode
             except:
                 pass
             sleep = updates[mode].exec_update()

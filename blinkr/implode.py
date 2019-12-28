@@ -1,7 +1,10 @@
+import time
 import random
 from animation import Animation
 
 ###############################################################################
+
+ALL_PIXELS = set(range(0, 338))
 
 RIGHT_BOTTOM_LEN = 80
 RIGHT_BOTTOM_START = 0
@@ -33,6 +36,8 @@ RIGHT_TOP = set(range(RIGHT_TOP_START, RIGHT_TOP_END))
 NEXT_TO_QR = {0, 1, 2, 3, 4, 5, 338, 337, 336}
 
 NEXT_TO_BUTTONS = set(range(15, 37))
+NOT_NEXT_TO_BUTTONS = ALL_PIXELS.difference(NEXT_TO_BUTTONS)
+
 
 SECTIONS = {"RIGHT_BOTTOM":    RIGHT_BOTTOM,
             "BOTTOM":          BOTTOM,
@@ -49,16 +54,44 @@ SECTION_LIST = list(sorted(SECTIONS.keys()))
 OFF = (0, 0, 0)
 ON = (255, 255, 255)
 
-class Flash(Animation):
+LERP_SECONDS = 1.5
+
+class Implode(Animation):
     def __init__(self, pixels):
         super().__init__(pixels)
+        self.running = False
+        self.not_next = list(NOT_NEXT_TO_BUTTONS)
+
+    def setup(self):
+        self.lerp_start_time = time.time()
+        self.lerp_end_time = self.lerp_start_time + LERP_SECONDS
+        self.lerps = []
+        for p in NEXT_TO_BUTTONS:
+            start_pixel = random.choice(self.not_next)
+            if start_pixel > 169:
+                end_pixel = p + 338
+            else:
+                end_pixel = p
+            self.lerps.append({'start_pixel': start_pixel,
+                               'end_pixel':   end_pixel})
 
     def exec_update(self):
-        section = random.choice(SECTION_LIST)
-        #print("section: %s" % section)
-        pixels_on = SECTIONS[section]
+        now = time.time()
+        if now > self.lerp_end_time:
+            pixels_on = NEXT_TO_BUTTONS
+        else:
+            progress = 1.0 - ((self.lerp_end_time - now) /
+                        (self.lerp_end_time - self.lerp_start_time))
+            pixels_on = set()
+            for l in self.lerps:
+                distance = l['end_pixel'] - l['start_pixel']
+                on_pixel = self.modpixel(l['start_pixel'] +
+                                         round(distance * progress))
+                pixels_on.add(on_pixel)
+
         rgbs = [(ON if p in pixels_on else OFF) for p in
                 range(len(self.pixels))]
         self.pixels[:] = rgbs[:]
         self.pixels.write()
-        return 0.1
+        return 0.01
+

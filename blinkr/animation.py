@@ -5,6 +5,9 @@ class Animation():
     def __init__(self, pixels):
         self.pixels = pixels
 
+    def setup(self):
+        pass
+
     def mod256(v):
         return v % 256
 
