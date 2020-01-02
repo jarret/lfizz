@@ -218,14 +218,18 @@ class Invoicer(object):
         except Exception as e:
             logging.exception("could not check paid! %s" % e)
             return None
+        if time.time() > (details['expire_time'] - 10.0):
+            return "expired"
         return data['data']['status']
 
     def current_check_paid_defer(self):
         if not self.app_state.facts['current_id']:
             logging.error("no current invoice")
             return
-        current_details = {'api_key':   self.api_key,
-                           'charge_id': self.app_state.facts['current_id']}
+        expire_time = self.app_state.facts['current_expiry']
+        current_details = {'api_key':     self.api_key,
+                           'charge_id':   self.app_state.facts['current_id'],
+                           'expire_time': expire_time}
         d = threads.deferToThread(Invoicer._check_paid_thread_func,
                                   current_details)
         d.addCallback(self._current_check_paid_callback)
@@ -235,8 +239,10 @@ class Invoicer(object):
             logging.debug("no last invoice")
             self.reactor.callLater(2.0, self.last_check_paid_defer)
             return
-        last_details = {'api_key':   self.api_key,
-                        'charge_id': self.app_state.facts['last_id']}
+        expire_time = self.app_state.facts['last_expiry']
+        last_details = {'api_key':     self.api_key,
+                        'charge_id':   self.app_state.facts['last_id'],
+                        'expire_time': expire_time}
         d = threads.deferToThread(Invoicer._check_paid_thread_func,
                                   last_details)
         d.addCallback(self._last_check_paid_callback)
