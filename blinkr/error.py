@@ -14,4 +14,5 @@ class Error(Animation):
             else:
                 self.pixels[i] = (0, 0, 0)
         self.even = not self.even
+        self.pixels.write()
         return 2.0
