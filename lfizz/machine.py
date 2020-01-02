@@ -4,6 +4,8 @@
 
 import logging
 
+from twisted.internet.task import LoopingCall
+
 
 MACHINE_STATES = {'INIT', "INVOICING", "VENDING", "ERROR"}
 
@@ -16,6 +18,14 @@ class Machine(object):
         self.toggle = 0
         self.state = "INIT"
         self.electrical = None
+        self.idle_poke = LoopingCall(self.change_idle_led)
+        self.idle_poke.start(60.0, now=False)
+
+    def change_idle_led(self):
+        if self.state not in {"INVOICING", "INIT"}:
+            return
+        new_mode = self.leds.new_idle_mode()
+        self.leds.set_mode(new_mode)
 
     def set_electrical(self, electrical):
         self.electrical = electrical
@@ -24,12 +34,12 @@ class Machine(object):
         assert new_state in MACHINE_STATES
         self.state = new_state
 
-        if new_state == "INVOICING":
-            self.leds.set_mode("ANT")
+        if new_state in {"INVOICING", "INIT"}:
+            self.leds.set_mode(self.leds.new_idle_mode())
         elif new_state == "VENDING":
-            self.leds.set_mode("RAINBOW")
+            self.leds.set_mode("IMPLODE")
         else:
-            self.leds.set_mode("OCD")
+            self.leds.set_mode("EXIT")
 
     def bolt11_on_screen(self, bolt11):
         logging.info("bolt11 on screen: %s" % bolt11)
