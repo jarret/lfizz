@@ -63,7 +63,6 @@ class Invoicer(object):
         self.app_state = app_state
         self.machine = machine
         self.api_key = self.app_state.static_facts['opennode_api_key']
-        self.email = self.app_state.static_facts['email']
         self.price = self.app_state.static_facts['fiat_price']
         self.currency = self.app_state.static_facts['fiat_currency']
         self.timezone = self.app_state.static_facts['timezone']

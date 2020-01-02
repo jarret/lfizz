@@ -94,17 +94,6 @@ class Machine(object):
 
     ##########################################################################
 
-    def draw_stuff(self):
-        print("drawing random stuff")
-        if self.toggle % 3 == 0:
-            self.eink.draw_random_1()
-        elif self.toggle % 3 == 1:
-            self.eink.draw_random_2()
-        elif self.toggle % 3 == 2:
-            self.eink.draw_random_3()
-        self.toggle += 1
-        self.reactor.callLater(3.0, self.draw_stuff)
-
     def run(self):
         #self.reactor.callLater(10.0, self.draw_stuff)
         pass

@@ -13,7 +13,6 @@ class AppState(object):
             'fiat_currency':  config['Vending']['FiatCurrency'],
             'fiat_price':     float(config['Vending']['FiatPrice']),
             'opennode_api_key': config['OpenNode']['ApiKey'],
-            'email':          config['Contact']['Email'],
             'timezone':       config['Time']['Timezone'],
             }
         self.facts = {'exchange_rate':           None,
