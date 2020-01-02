@@ -14,7 +14,7 @@ PUBLISH_ENDPOINT = "tcp://127.0.0.1:7777"
 
 TAG = "blinkr".encode("utf8")
 
-MODES = {"OCD", "ANT", "RAINBOW", "FLASH", "IMPLODE"}
+MODES = {"OCD", "ANT", "RAINBOW", "FLASH", "IMPLODE", "ERROR", "EXIT"}
 
 IDLE_MODES = {"OCD", "ANT", "RAINBOW", "FLASH"}
 

@@ -38,6 +38,8 @@ class Machine(object):
             self.leds.set_mode(self.leds.new_idle_mode())
         elif new_state == "VENDING":
             self.leds.set_mode("IMPLODE")
+        elif new_state == "ERROR":
+            self.leds.set_mode("ERROR")
         else:
             self.leds.set_mode("EXIT")
 
