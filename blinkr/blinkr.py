@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import sys
+import os
 import time
 import random
 import json
@@ -7,9 +9,12 @@ import logging
 
 from queue import Queue
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 import board
 from neopixel import NeoPixel
 
+from twisted.application.service import Service
 from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
 
@@ -37,7 +42,7 @@ MODES = {"RAINBOW", "ANT", "OCD", "FLASH", "IMPLODE", "QUIT"}
 
 ###############################################################################
 
-class Blinkr(object):
+class Blinkr(Service):
     def __init__(self):
         self.queue = Queue()
 
@@ -91,6 +96,16 @@ class Blinkr(object):
 
     def stop(self):
         self.queue.put("QUIT")
+
+    def startService(self):
+        super().startService()
+        self.start()
+
+    def stopService(self):
+        super().stopService()
+        self.stop()
+        time.sleep(0.5)
+        reactor.stop()
 
 
 if __name__ == "__main__":
