@@ -39,7 +39,7 @@ class NetworkHealth(object):
             logging.info("network seems good: %s" % result)
         else:
             logging.error("network error?")
-            self.machine.post_err()
+            self.machine.post_error()
         self.reactor.callLater(POLL_SLEEP, self._get_ip_defer)
 
     def _get_ip_defer(self):
