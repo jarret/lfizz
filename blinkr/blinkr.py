@@ -28,6 +28,7 @@ from rainbow import Rainbow
 from flash import Flash
 from quit import Quit
 from implode import Implode
+from error import Error
 
 
 ZMQ_ENDPOINT = "tcp://127.0.0.1:7777"
@@ -38,7 +39,7 @@ N_PIXELS = 338
 BRIGHTNESS = 0.3
 DATA_PIN = board.D18
 
-MODES = {"RAINBOW", "ANT", "OCD", "FLASH", "IMPLODE", "QUIT"}
+MODES = {"RAINBOW", "ANT", "OCD", "FLASH", "IMPLODE", "ERROR", "QUIT"}
 
 ###############################################################################
 
@@ -71,6 +72,7 @@ class Blinkr(Service):
                    'OCD':     Ocd(pixels),
                    'FLASH':   Flash(pixels),
                    'IMPLODE': Implode(pixels),
+                   'ERROR':   Error(pixels),
                    'QUIT':    Quit(pixels)}
         assert set(updates.keys()) == MODES
         mode = "OCD"
