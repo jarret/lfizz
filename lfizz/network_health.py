@@ -36,7 +36,8 @@ class NetworkHealth(object):
 
     def _get_ip_callback(self, result):
         if result:
-            logging.info("network seems good: %s" % result)
+            #logging.info("network seems good: %s" % result)
+            pass
         else:
             logging.error("network error?")
             self.machine.post_error()

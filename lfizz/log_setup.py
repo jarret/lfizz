@@ -32,7 +32,7 @@ def setup_logging(filename, console_silent=False):
     #logfile_handler.setLevel(logging.DEBUG)
     logfile_handler = logging.handlers.TimedRotatingFileHandler(filename,
                                                                 'midnight')
-    logfile_handler.setLevel(logging.DEBUG)
+    logfile_handler.setLevel(logging.INFO)
     logfile_format = logging.Formatter(
         '%(asctime)s %(filename)s:%(lineno)d %(levelname)s: %(message)s')
     logfile_handler.setFormatter(logfile_format)

@@ -47,7 +47,7 @@ class Machine(object):
         logging.info("bolt11 on screen: %s" % bolt11)
         f = self.app_state.facts
         if not f['current_bolt11']:
-            logging.debug("no current bolt11 to display")
+            logging.info("no current bolt11 to display")
 
         bolt11 = f['current_bolt11']
         satoshis = f['current_satoshis']

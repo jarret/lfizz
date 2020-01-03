@@ -8,6 +8,7 @@ import json
 import time
 import pytz
 import logging
+import traceback
 
 from twisted.internet import threads
 
@@ -34,7 +35,9 @@ class OpenNode(object):
                                         data=json.dumps(data), headers=headers,
                                        )
             return json.loads(response.text)
-        except:
+        except Exception as e:
+            logging.error(traceback.format_exc())
+            logging.exception(e)
             return None
 
     def poll_charge(api_key, charge_id):
@@ -43,7 +46,9 @@ class OpenNode(object):
             url = OPEN_NODE_POLL_URL + charge_id
             response = requests.request('GET', url=url, headers=headers)
             return json.loads(response.text)
-        except:
+        except Exception as e:
+            logging.error(traceback.format_exc())
+            logging.exception(e)
             return None
 
     def poll_exchange():
@@ -95,7 +100,7 @@ class Invoicer(object):
                                             tz=pytz.timezone("US/Mountain"))
         estr = e.strftime('%b %d, %H:%M:%S')
 
-        logging.debug("setting current: %s %s %dsat %s" % (bolt11[-5:],
+        logging.info("setting current: %s %s %dsat %s" % (bolt11[-5:],
             invoice_id[-5:], sats, estr))
         self.app_state.facts['current_bolt11'] = bolt11
         self.app_state.facts['current_id'] = invoice_id
@@ -131,6 +136,7 @@ class Invoicer(object):
             charge = OpenNode.create_charge(details['api_key'], sats,
                                             description)
         except Exception as e:
+            logging.error(traceback.format_exc())
             logging.exception(e)
             self.machine.post_error()
             return None
@@ -183,7 +189,7 @@ class Invoicer(object):
         if not result:
             logging.error("could not check invoice paid?")
             return
-        logging.debug("current invoice: %s" % result)
+        logging.info("current invoice: %s" % result)
 
         if result == "paid":
             self.produce_paid_event()
@@ -201,7 +207,7 @@ class Invoicer(object):
         if not result:
             logging.error("could not check last paid?")
             return
-        logging.debug("last invoice: %s" % result)
+        logging.info("last invoice: %s" % result)
 
         if result == "paid":
             self.produce_paid_event()
@@ -216,7 +222,8 @@ class Invoicer(object):
             data = OpenNode.poll_charge(details['api_key'],
                                         details['charge_id'])
         except Exception as e:
-            logging.exception("could not check paid! %s" % e)
+            logging.error(traceback.format_exc())
+            logging.exception(e)
             return None
         if time.time() > (details['expire_time'] - 10.0):
             return "expired"
@@ -236,7 +243,7 @@ class Invoicer(object):
 
     def last_check_paid_defer(self):
         if not self.app_state.facts['last_id']:
-            logging.debug("no last invoice")
+            logging.info("no last invoice")
             self.reactor.callLater(2.0, self.last_check_paid_defer)
             return
         expire_time = self.app_state.facts['last_expiry']
@@ -260,7 +267,10 @@ class Invoicer(object):
 
         change = float(new_sats) / float(old_sats)
         quantity_change = abs(1.0 - change)
-        logging.info("quantity change: %0.6f" % quantity_change)
+        logging.info("rate: %s old sats: %d new sats %d "
+                     "quantity change: %0.6f" %
+                     (self.app_state.facts['exchange_rate'], old_stats,
+                      new_sats, quantity_change))
         if quantity_change > QUANTITY_CHANGE_THRESHOLD:
             self.deprecate_current_invoice()
             self.reactor.callLater(0.1, self.new_invoice_defer)
@@ -269,7 +279,7 @@ class Invoicer(object):
         if not result:
             logging.error("could not get exchange rate?")
             return
-        logging.info("rate: %s" % result)
+        #logging.info("rate: %s" % result)
         self.app_state.facts['exchange_rate'] = result
         self.app_state.facts['exchange_rate_timestamp'] = time.time()
 
@@ -280,7 +290,8 @@ class Invoicer(object):
         try:
             data = OpenNode.poll_exchange()
         except Exception as e:
-            loggin.exception("could not get exchange rate! %s" % e)
+            logging.error(traceback.format_exc())
+            logging.exception(e)
             return None
         return data['data']['BTCCAD']['CAD']
 
