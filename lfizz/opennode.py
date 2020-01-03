@@ -260,6 +260,7 @@ class Invoicer(object):
 
     def _check_invoice_exchange_rate(self):
         if not self.app_state.facts['current_id']:
+            logging.info("no current id")
             return
         new_sats = Invoicer.calc_satoshis(
             self.app_state.facts['exchange_rate'],
@@ -271,7 +272,7 @@ class Invoicer(object):
         quantity_change = abs(1.0 - change)
         logging.info("rate: %s old sats: %d new sats %d "
                      "quantity change: %0.6f" %
-                     (self.app_state.facts['exchange_rate'], old_stats,
+                     (self.app_state.facts['exchange_rate'], old_sats,
                       new_sats, quantity_change))
         if quantity_change > QUANTITY_CHANGE_THRESHOLD:
             self.deprecate_current_invoice()
@@ -286,14 +287,17 @@ class Invoicer(object):
         self.app_state.facts['exchange_rate'] = result
         self.app_state.facts['exchange_rate_timestamp'] = time.time()
 
+        logging.info("got exchange rate %s" % result)
         self._check_invoice_exchange_rate()
         self.reactor.callLater(10.0, self.get_exchange_defer)
 
     def _get_exchange_thread_func():
         try:
+            logging.info("getting exchange rate")
             data = OpenNode.poll_exchange()
             return data['data']['BTCCAD']['CAD']
         except Exception as e:
+            logging.info("adsfadsfas")
             logging.error(traceback.format_exc())
             logging.exception(e)
             return None
