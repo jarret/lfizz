@@ -188,6 +188,7 @@ class Invoicer(object):
     def _current_check_paid_callback(self, result):
         if not result:
             logging.error("could not check invoice paid?")
+            self.reactor.callLater(2.0, self.current_check_paid_defer)
             return
         logging.info("current invoice: %s" % result)
 
@@ -206,6 +207,7 @@ class Invoicer(object):
     def _last_check_paid_callback(self, result):
         if not result:
             logging.error("could not check last paid?")
+            self.reactor.callLater(2.0, self.last_check_paid_defer)
             return
         logging.info("last invoice: %s" % result)
 
@@ -221,13 +223,13 @@ class Invoicer(object):
         try:
             data = OpenNode.poll_charge(details['api_key'],
                                         details['charge_id'])
+            if time.time() > (details['expire_time'] - 10.0):
+                return "expired"
+            return data['data']['status']
         except Exception as e:
             logging.error(traceback.format_exc())
             logging.exception(e)
             return None
-        if time.time() > (details['expire_time'] - 10.0):
-            return "expired"
-        return data['data']['status']
 
     def current_check_paid_defer(self):
         if not self.app_state.facts['current_id']:
@@ -278,6 +280,7 @@ class Invoicer(object):
     def _get_exchange_callback(self, result):
         if not result:
             logging.error("could not get exchange rate?")
+            self.reactor.callLater(10.0, self.get_exchange_defer)
             return
         #logging.info("rate: %s" % result)
         self.app_state.facts['exchange_rate'] = result
@@ -289,11 +292,11 @@ class Invoicer(object):
     def _get_exchange_thread_func():
         try:
             data = OpenNode.poll_exchange()
+            return data['data']['BTCCAD']['CAD']
         except Exception as e:
             logging.error(traceback.format_exc())
             logging.exception(e)
             return None
-        return data['data']['BTCCAD']['CAD']
 
 
     def get_exchange_defer(self):
