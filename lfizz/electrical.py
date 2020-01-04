@@ -30,7 +30,7 @@ class Electrical(object):
         #                      callback=self.falling)
 
         self.machine.set_electrical(self)
-        _ = threads.deferToThread(Electrical.set_high)
+        #_ = threads.deferToThread(Electrical.set_high)
 
         lc = LoopingCall(self.check_input)
         lc.start(1.0)
@@ -42,13 +42,13 @@ class Electrical(object):
         GPIO.setup(INSERT_CHANGE_LIGHT, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
     def flip_delay_flip():
-        GPIO.output(COIN_MECH_RELAY, GPIO.LOW)
+        GPIO.output(COIN_MECH_RELAY, GPIO.HIGH)
         print("sleeping")
         time.sleep(2)
-        GPIO.output(COIN_MECH_RELAY, GPIO.HIGH)
+        GPIO.output(COIN_MECH_RELAY, GPIO.LOW)
 
-    def set_high():
-        GPIO.output(COIN_MECH_RELAY, GPIO.HIGH)
+    #def set_high():
+    #    GPIO.output(COIN_MECH_RELAY, GPIO.HIGH)
 
     def trigger_coin_mech(self):
         print_green("triggering coin mech")
