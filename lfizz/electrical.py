@@ -13,7 +13,7 @@ from twisted.internet.task import LoopingCall
 from print import print_green, print_light_blue
 
 COIN_MECH_RELAY = 7
-INSERT_CHANGE_LIGHT = 8
+INSERT_CHANGE_LIGHT = 13
 
 
 class Electrical(object):
