@@ -190,7 +190,8 @@ class Invoicer(object):
             logging.error("could not check invoice paid?")
             self.reactor.callLater(2.0, self.current_check_paid_defer)
             return
-        logging.info("current invoice: %s" % result)
+        bolt11 = self.app_state.facts['current_bolt11']
+        logging.info("current invoice %s: %s" % (bolt11[-5:], result))
 
         if result == "paid":
             self.produce_paid_event()
@@ -209,7 +210,8 @@ class Invoicer(object):
             logging.error("could not check last paid?")
             self.reactor.callLater(2.0, self.last_check_paid_defer)
             return
-        logging.info("last invoice: %s" % result)
+        bolt11 = self.app_state.facts['last_bolt11']
+        logging.info("last invoice %s: %s" % (bolt11[-5:], result))
 
         if result == "paid":
             self.produce_paid_event()

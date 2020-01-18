@@ -4,9 +4,10 @@ Description=Soda Machine Decoration
 [Service]
 ExecStart=/usr/local/bin/twistd \
     --nodaemon \
-    --python=/home/pi/lfizz/blinkr.tac
+    --python=/home/pi/lfizz/blinkr.tac \
+    --pidfile blinkr.pid
 
-WorkingDirectory=/home/pi/blinkr-work
+WorkingDirectory=/tmp/
 
 User=root
 Group=root

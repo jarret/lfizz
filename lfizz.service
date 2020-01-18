@@ -4,9 +4,10 @@ Description=Soda Machine Process
 [Service]
 ExecStart=/usr/local/bin/twistd \
     --nodaemon \
-    --python=/home/pi/lfizz/lfizz.tac
+    --python=/home/pi/lfizz/lfizz.tac \
+    --pidfile lfizz.pid
 
-WorkingDirectory=/home/pi/lfizz-work
+WorkingDirectory=/tmp
 
 User=pi
 Group=pi
