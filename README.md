@@ -6,7 +6,7 @@ The main daemon, `lfizz` interfaces with OpenNode for obtaining BOLT11 invoices 
 
 The other daemon, `blinkr` drives the neopixel WS2812b RGB LEDs mounted on the front of the machine. It takes instruction over ZeroMQ from `lfizz` for which animation to be running.
 
-#$ The circuit
+## The circuit
 
 One GPIO pin goes out to a relay, which closes the pins of the Jones plug to credit the machine to allow vending a drink.
 
