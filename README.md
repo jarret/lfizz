@@ -1,6 +1,4 @@
 # lfizz
-daemon for embedded soda machine invoicer
+Undocumented vending machine code for the Pepsi Machine at Bitcoin Solutions in Edmonton, Alberta, Canada.
 
-# WIP
-
-This doesn't do anything yet - just starting out tinkering around.
+As seen on BTC Sessions
