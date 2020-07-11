@@ -148,6 +148,7 @@ class Invoicer(object):
     def _new_invoice_callback(self, result):
         if not result:
             # try again?
+            logging.error("could not get new invoice")
             self.reactor.callLater(3, self.new_invoice_defer)
             return
 
