@@ -16,7 +16,8 @@ TAG = "blinkr".encode("utf8")
 
 MODES = {"OCD", "ANT", "RAINBOW", "FLASH", "IMPLODE", "ERROR", "EXIT"}
 
-IDLE_MODES = {"OCD", "ANT", "RAINBOW", "FLASH"}
+#IDLE_MODES = {"OCD", "ANT", "RAINBOW", "FLASH"}
+IDLE_MODES = {"OCD", "ANT", "RAINBOW"}
 
 class Leds:
     def __init__(self):

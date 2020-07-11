@@ -58,7 +58,7 @@ class OpenNode(object):
 
 ###############################################################################
 
-QUANTITY_CHANGE_THRESHOLD = 0.005
+QUANTITY_CHANGE_THRESHOLD = 0.04
 
 SATOSHIS_PER_BTC = 100000000
 
