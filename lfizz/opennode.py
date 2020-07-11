@@ -163,6 +163,7 @@ class Invoicer(object):
     def new_invoice_defer(self):
         if not self.app_state.facts['exchange_rate']:
             logging.error("don't have the price yet!")
+            self.reactor.callLater(5.0, self.new_invoice_defer)
             return
 
         details = {'price':         self.price,
