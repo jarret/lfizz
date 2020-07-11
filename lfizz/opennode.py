@@ -302,9 +302,11 @@ class Invoicer(object):
         try:
             logging.info("getting exchange rate")
             data = OpenNode.poll_exchange()
+            if not data:
+                return None
             return data['data']['BTCCAD']['CAD']
         except Exception as e:
-            logging.info("adsfadsfas")
+            logging.info("exchnage rate problem")
             logging.error(traceback.format_exc())
             logging.exception(e)
             return None
