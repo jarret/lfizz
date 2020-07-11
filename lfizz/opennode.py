@@ -127,7 +127,7 @@ class Invoicer(object):
 
     def new_invoice(details):
         if not details['exchange_rate']:
-            logging.errro("no price info")
+            logging.error("no price info")
             return None
         sats = Invoicer.calc_satoshis(details['exchange_rate'],
                                       details['price'])
