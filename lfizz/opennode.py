@@ -240,6 +240,7 @@ class Invoicer(object):
     def current_check_paid_defer(self):
         if not self.app_state.facts['current_id']:
             logging.error("no current invoice")
+            self.reactor.callLater(2.0, self.current_check_paid_defer)
             return
         expire_time = self.app_state.facts['current_expiry']
         current_details = {'api_key':     self.api_key,
