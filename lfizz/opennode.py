@@ -226,6 +226,8 @@ class Invoicer(object):
         try:
             data = OpenNode.poll_charge(details['api_key'],
                                         details['charge_id'])
+            if not data:
+                return None
             if time.time() > (details['expire_time'] - 10.0):
                 return "expired"
             return data['data']['status']
